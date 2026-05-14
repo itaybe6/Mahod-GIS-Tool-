@@ -30,6 +30,11 @@ import { AnalysisResultsLayer } from './AnalysisResultsLayer';
 import { gtfsStopRowsToTransitStops } from '@/features/gtfs/gtfsStopMapUtils';
 import { useGtfsStops } from '@/features/gtfs/useGtfsStops';
 import {
+  useRailwayStations,
+  type RailwayStation,
+  type RailwayStationStatus,
+} from '@/features/infrastructure/useRailwayStations';
+import {
   ACCIDENTS,
   INFRA_POINTS,
   ROADS,
@@ -59,6 +64,34 @@ const MARKER_ICONS = {
   transit: makeMarkerIcon('emerald'),
   infrastructure: makeMarkerIcon('purple'),
 } as const;
+
+/** ארבעה מצבי תחנת רכבת — נשארים כמעט-תמיד באותה משפחת צבע (סגול) כדי שיראו שייכים לשכבת "תשתיות". */
+const RAILWAY_STATION_STYLE: Record<
+  RailwayStationStatus,
+  { color: string; label: string; opacity: number }
+> = {
+  operational: { color: '#a855f7', label: 'תחנה פעילה', opacity: 1 },
+  under_construction: { color: '#d946ef', label: 'בבנייה', opacity: 0.95 },
+  planned: { color: '#c084fc', label: 'מתוכננת', opacity: 0.55 },
+};
+
+function makeRailwayStationIcon(status: RailwayStationStatus): L.DivIcon {
+  const { color, opacity } = RAILWAY_STATION_STYLE[status];
+  return L.divIcon({
+    html:
+      `<div class="marker-glow" style="--marker-color: ${color};` +
+      ` background:${color}; box-shadow:0 0 10px ${color}; opacity:${opacity}"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    className: 'custom-map-marker',
+  });
+}
+
+const RAILWAY_STATION_ICONS: Record<RailwayStationStatus, L.DivIcon> = {
+  operational: makeRailwayStationIcon('operational'),
+  under_construction: makeRailwayStationIcon('under_construction'),
+  planned: makeRailwayStationIcon('planned'),
+};
 
 /**
  * Imperative controller that ties the `mapStore.mapType` Zustand state to
@@ -151,6 +184,9 @@ export function MapView({ className }: MapViewProps): JSX.Element {
     if (!gtfsFetched || !gtfsRows) return [];
     return gtfsStopRowsToTransitStops(gtfsRows);
   }, [uploadedBbox, gtfsFetched, gtfsRows]);
+
+  // 109 תחנות בסך הכל — בטוח לטעון את כולן בכל זמן ולצייר אותן ישירות ב-Leaflet.
+  const { data: railwayStations } = useRailwayStations();
   const is3D = mapType === 'mapbox3d';
   const tileConfig = is3D ? null : TILE_LAYERS[mapType];
 
@@ -288,6 +324,23 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                 >
                   <Popup>
                     <strong>{point.name}</strong>
+                  </Popup>
+                </Marker>
+              ))}
+              {(railwayStations ?? []).map((station: RailwayStation) => (
+                <Marker
+                  key={`rail-st-${station.stationId}`}
+                  position={station.position}
+                  icon={RAILWAY_STATION_ICONS[station.status]}
+                >
+                  <Popup>
+                    <strong>{station.name}</strong>
+                    <br />
+                    סוג: תחנת רכבת
+                    <br />
+                    סטטוס: {RAILWAY_STATION_STYLE[station.status].label}
+                    <br />
+                    מזהה: {station.stationId}
                   </Popup>
                 </Marker>
               ))}

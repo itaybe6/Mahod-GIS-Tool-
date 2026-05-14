@@ -30,6 +30,7 @@ import { readFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import proj4 from "proj4";
 import shp from "shpjs";
+import ws from "ws";
 import type { FeatureCollection, Point } from "geojson";
 
 // ---------- ENV ----------
@@ -46,6 +47,9 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { persistSession: false },
+  // Node.js 20 has no native WebSocket that @supabase/realtime-js accepts.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  realtime: { transport: ws as any },
 });
 
 // ---------- FILE PATHS ----------
@@ -148,7 +152,8 @@ function toDbRow(
   itmCoords: [number, number],
   sourceVersion: string
 ): DbRow | null {
-  if (props.ASSET_NO == null || !props.NAME) return null;
+  // ASSET_NO=0 משמש כ-placeholder עבור תחנות מתוכננות בלי מזהה; נדלג עליהן כדי לא לדרוס שורות אמיתיות.
+  if (props.ASSET_NO == null || props.ASSET_NO <= 0 || !props.NAME) return null;
 
   // shpjs reprojects when the ZIP includes .prj; fall back to ITM conversion when needed.
   const [lon, lat] =

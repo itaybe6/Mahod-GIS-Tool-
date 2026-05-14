@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { MapType } from '@/constants/mapConfig';
 import type { LayerKey } from '@/types/common';
+import { useUploadStore } from '@/stores/uploadStore';
 
 export interface FocusAnalysisFeature {
   layerKey: LayerKey;
@@ -66,7 +67,16 @@ export const useMapStore = create<MapState>((set) => ({
   lastGeocodeCamera: null,
   focusAnalysisFeature: null,
 
-  setMapType: (type) => set({ mapType: type }),
+  setMapType: (type) => {
+    if (type === 'mapbox3d') {
+      const { inputMode, setInputMode, setDrawingPhase } = useUploadStore.getState();
+      if (inputMode === 'draw') {
+        setInputMode('upload');
+        setDrawingPhase('idle');
+      }
+    }
+    set({ mapType: type });
+  },
   toggleLayer: (layer) =>
     set((state) => ({
       activeLayers: { ...state.activeLayers, [layer]: !state.activeLayers[layer] },

@@ -51,6 +51,11 @@
 - מקור: [data.gov.il — ministry_of_transport / rail_stat](https://data.gov.il/he/datasets/ministry_of_transport/rail_stat)
 - הערה: מערך הנתונים הרשמי של משרד התחבורה בפורטל data.gov.il; לפרטי שדות, עדכונים וקבצי הורדה יש לעיין בעמוד המקור.
 
+## הרכבת הקלה (lrt_stat)
+
+- מקור: [data.gov.il — ministry_of_transport / lrt_stat](https://data.gov.il/he/datasets/ministry_of_transport/lrt_stat)
+- הערה: מערך הנתונים הרשמי של משרד התחבורה בפורטל data.gov.il לתשתיות הרכבת הקלה; לפרטי שדות, עדכונים וקבצי הורדה יש לעיין בעמוד המקור.
+
 ## Road accidents — CBS TAZ aggregate (`accid_taz` / accid_taz.csv)
 
 - **What we load:** A government table exported as CSV with one row per **TAZ** (traffic analysis zone): population, land use, injury and vehicle-involvement counts, `YEARMONTH`, `CITYCODE` (CBS municipality code where present), and shape metrics (`Shape_Length`, `Shape_Area`). In Postgres these map to `public.accidents` (snake_case columns; `PRIVATE` from the file → `private_vehicle`, `VEHICLE` → `vehicles`).

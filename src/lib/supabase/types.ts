@@ -945,6 +945,17 @@ export type Database = {
         Args: { x_itm: number; y_itm: number };
         Returns: PgGeometry;
       };
+      list_railway_stations: {
+        Args: Record<string, never>;
+        Returns: Array<{
+          station_id: number;
+          station_name: string;
+          status: InfraLineStatus;
+          is_active: boolean;
+          lon: number;
+          lat: number;
+        }>;
+      };
       find_municipalities_for_polygon: {
         Args: { polygon_geojson: string };
         Returns: {

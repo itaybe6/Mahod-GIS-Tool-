@@ -12,6 +12,11 @@ import {
 import { gtfsStopRowsToTransitStops, transitStopsToGeoJSON } from '@/features/gtfs/gtfsStopMapUtils';
 import { useGtfsStops } from '@/features/gtfs/useGtfsStops';
 import {
+  useRailwayStations,
+  type RailwayStation,
+  type RailwayStationStatus,
+} from '@/features/infrastructure/useRailwayStations';
+import {
   ACCIDENTS,
   INFRA_POINTS,
   ROADS,
@@ -45,6 +50,42 @@ function buildInfraGeoJSON(): FeatureCollection<Point, { name: string }> {
       type: 'Feature',
       geometry: { type: 'Point', coordinates: toMapboxLngLat(p.position) },
       properties: { name: p.name },
+    })),
+  };
+}
+
+interface RailwayStationFeatureProps {
+  station_id: number;
+  name: string;
+  status: RailwayStationStatus;
+  status_label: string;
+}
+
+const RAILWAY_STATION_LABEL: Record<RailwayStationStatus, string> = {
+  operational: 'תחנה פעילה',
+  under_construction: 'בבנייה',
+  planned: 'מתוכננת',
+};
+
+const EMPTY_RAILWAY_GEOJSON: FeatureCollection<Point, RailwayStationFeatureProps> = {
+  type: 'FeatureCollection',
+  features: [],
+};
+
+function buildRailwayStationsGeoJSON(
+  stations: ReadonlyArray<RailwayStation>,
+): FeatureCollection<Point, RailwayStationFeatureProps> {
+  return {
+    type: 'FeatureCollection',
+    features: stations.map((s) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: toMapboxLngLat(s.position) },
+      properties: {
+        station_id: s.stationId,
+        name: s.name,
+        status: s.status,
+        status_label: RAILWAY_STATION_LABEL[s.status],
+      },
     })),
   };
 }
@@ -107,6 +148,7 @@ const SOURCES = {
   routes: 'src-transit-routes',
   roads: 'src-roads',
   infra: 'src-infra',
+  railwayStations: 'src-railway-stations',
   upload: 'src-upload-polygon',
 } as const;
 
@@ -116,6 +158,7 @@ const LAYERS = {
   routes: 'lyr-transit-routes',
   roads: 'lyr-roads',
   infra: 'lyr-infra',
+  railwayStations: 'lyr-railway-stations',
   uploadFill: 'lyr-upload-fill',
   uploadExtrusion: 'lyr-upload-extrusion',
   uploadLine: 'lyr-upload-line',
@@ -180,6 +223,7 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
   // טעינת תחנות נעשית רק עבור ה-bbox של הפוליגון שהועלה (אחרת המפה
   // מקבלת ~30K Markers ונתקעת).
   const { data: gtfsRows, isFetched: gtfsFetched } = useGtfsStops(uploadedBbox);
+  const { data: railwayStations } = useRailwayStations();
 
   /* ----------------------------- init map ----------------------------- */
   useEffect(() => {
@@ -220,6 +264,10 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
       map.addSource(SOURCES.routes, { type: 'geojson', data: buildRoutesGeoJSON() });
       map.addSource(SOURCES.roads, { type: 'geojson', data: buildRoadsGeoJSON() });
       map.addSource(SOURCES.infra, { type: 'geojson', data: buildInfraGeoJSON() });
+      map.addSource(SOURCES.railwayStations, {
+        type: 'geojson',
+        data: EMPTY_RAILWAY_GEOJSON,
+      });
       map.addSource(SOURCES.upload, {
         type: 'geojson',
         data: useUploadStore.getState().polygon ?? EMPTY_GEOJSON,
@@ -348,6 +396,44 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         },
       });
 
+      // Railway stations from infra_railway_stations (also part of "תשתיות").
+      // צבע מתחלף לפי ['get','status']: סגול עז = פעילה, ורוד-סגול = בבנייה,
+      // סגול חיוור = מתוכננת. גודל קטן יותר עבור מתוכננות.
+      map.addLayer({
+        id: LAYERS.railwayStations,
+        type: 'circle',
+        source: SOURCES.railwayStations,
+        paint: {
+          'circle-radius': [
+            'match',
+            ['get', 'status'],
+            'operational', 7,
+            'under_construction', 6.5,
+            'planned', 5,
+            6,
+          ],
+          'circle-color': [
+            'match',
+            ['get', 'status'],
+            'operational', '#a855f7',
+            'under_construction', '#d946ef',
+            'planned', '#c084fc',
+            '#a855f7',
+          ],
+          'circle-opacity': [
+            'match',
+            ['get', 'status'],
+            'operational', 0.95,
+            'under_construction', 0.9,
+            'planned', 0.55,
+            0.9,
+          ],
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'rgba(255,255,255,0.7)',
+          'circle-emissive-strength': 0.8,
+        },
+      });
+
       // Apply current visibility state immediately
       applyVisibility(map, useMapStore.getState().activeLayers);
 
@@ -376,6 +462,17 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
       attachPopup(map, LAYERS.infra, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
       attachPopup(map, LAYERS.roads, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
       attachPopup(map, LAYERS.routes, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
+      attachPopup(map, LAYERS.railwayStations, (props) => {
+        const name = escapeHtml(stringifyProperty(props.name));
+        const statusLabel = escapeHtml(stringifyProperty(props.status_label));
+        const sid = escapeHtml(stringifyProperty(props.station_id));
+        return (
+          `<strong>${name}</strong>` +
+          `<br/>סוג: תחנת רכבת` +
+          `<br/>סטטוס: ${statusLabel}` +
+          `<br/>מזהה: ${sid}`
+        );
+      });
 
       // If the user geocoded on Leaflet, `focusRequest` was already consumed there.
       // Restore that camera on first GL load when we are not prioritising an upload bbox.
@@ -426,6 +523,15 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
     const stops = gtfsStopRowsToTransitStops(gtfsRows ?? []);
     src.setData(transitStopsToGeoJSON(stops));
   }, [glMapReady, gtfsFetched, gtfsRows, uploadedBbox]);
+
+  /* ----------------- Supabase infra_railway_stations → source ---------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !glMapReady || !loadedRef.current) return;
+    const src = getGeoJsonSource(map, SOURCES.railwayStations);
+    if (!src) return;
+    src.setData(buildRailwayStationsGeoJSON(railwayStations ?? []));
+  }, [glMapReady, railwayStations]);
 
   /* ------------------------ uploaded polygon sync ---------------------- */
   // Push the latest GeoJSON into the existing source whenever the user
@@ -544,6 +650,7 @@ function applyVisibility(
   setLayerVisibility(map, LAYERS.routes, active.transit);
   setLayerVisibility(map, LAYERS.roads, active.roads);
   setLayerVisibility(map, LAYERS.infra, active.infrastructure);
+  setLayerVisibility(map, LAYERS.railwayStations, active.infrastructure);
 }
 
 function setLayerVisibility(map: mapboxgl.Map, layerId: string, visible: boolean): void {

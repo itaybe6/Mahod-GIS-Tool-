@@ -1,3 +1,4 @@
+import fontkit from 'npm:@pdf-lib/fontkit@1.1.1';
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from 'npm:pdf-lib@1.17.1';
 import type { ReportData } from './types.ts';
 
@@ -32,6 +33,7 @@ export async function generateReportPdf(data: ReportData): Promise<Uint8Array> {
   }
   const fontBytes = new Uint8Array(await fontRes.arrayBuffer());
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const font = await pdfDoc.embedFont(fontBytes, { subset: true });
 
   const page = pdfDoc.addPage([595.28, 841.89]);
