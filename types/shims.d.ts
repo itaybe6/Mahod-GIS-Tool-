@@ -6,7 +6,15 @@ declare module 'tailwindcss-rtl' {
 
 declare module 'shpjs' {
   import type { FeatureCollection } from 'geojson';
-  function shp(input: ArrayBuffer | Buffer | string): Promise<FeatureCollection | FeatureCollection[]>;
+  type ShpBundle = {
+    shp: ArrayBuffer | Buffer | Uint8Array;
+    dbf?: ArrayBuffer | Buffer | Uint8Array;
+    prj?: ArrayBuffer | Buffer | Uint8Array | string;
+    cpg?: ArrayBuffer | Buffer | Uint8Array | string;
+  };
+  function shp(
+    input: ArrayBuffer | Buffer | string | ShpBundle,
+  ): Promise<FeatureCollection | FeatureCollection[]>;
   export default shp;
 }
 

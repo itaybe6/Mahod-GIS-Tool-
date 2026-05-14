@@ -36,12 +36,19 @@ import {
 } from '@/features/map/mockData';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 
+const MARKER_TONE_COLORS = {
+  red: '#ef4444',
+  emerald: '#10b981',
+  amber: '#f59e0b',
+  purple: '#8b5cf6',
+} as const;
+
 function makeMarkerIcon(tone: 'red' | 'emerald' | 'amber' | 'purple'): L.DivIcon {
   return L.divIcon({
-    html: `<div class="marker-glow marker-${tone}"></div>`,
+    html: `<div class="marker-glow marker-${tone}" style="--marker-color: ${MARKER_TONE_COLORS[tone]}"></div>`,
     iconSize: [14, 14],
     iconAnchor: [7, 7],
-    className: '',
+    className: 'custom-map-marker',
   });
 }
 
@@ -179,7 +186,6 @@ export function MapView({ className }: MapViewProps): JSX.Element {
           <MapFocusController />
           <LeafletGeocodeRestore />
           <UploadedPolygonLayer />
-          <AnalysisResultsLayer />
 
           {activeLayers.accidents && (
             <LayerGroup>
@@ -284,6 +290,8 @@ export function MapView({ className }: MapViewProps): JSX.Element {
               ))}
             </LayerGroup>
           )}
+
+          <AnalysisResultsLayer />
         </LeafletMap>
       )}
 

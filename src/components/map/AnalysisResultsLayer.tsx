@@ -1,10 +1,8 @@
-import { useMemo } from 'react';
-import { GeoJSON } from 'react-leaflet';
+import { useEffect, useMemo, useRef } from 'react';
+import { GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import type { Feature, Geometry } from 'geojson';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { useAnalysisStore, type AnalysisLayerKey } from '@/stores/analysisStore';
-import { useMapStore } from '@/stores/mapStore';
-import type { LayerKey } from '@/types/common';
 
 const PALETTE: Record<AnalysisLayerKey, { color: string; label: string }> = {
   transit: { color: '#10b981', label: 'תח"צ' },
@@ -14,37 +12,51 @@ const PALETTE: Record<AnalysisLayerKey, { color: string; label: string }> = {
   traffic: { color: '#0ea5e9', label: 'ספירת תנועה' },
 };
 
-/**
- * Both stores share the same layer vocabulary, so the conversion is a
- * 1:1 cast — kept as a typed map to keep TS happy if the keys diverge later.
- */
-const ANALYSIS_TO_MAP: Record<AnalysisLayerKey, LayerKey> = {
-  transit: 'transit',
-  accidents: 'accidents',
-  roads: 'roads',
-  infrastructure: 'infrastructure',
-  traffic: 'traffic',
-};
+const ANALYSIS_PANE = 'analysisResults';
+
+function isNonEmptyFeatureCollection(fc: unknown): fc is FeatureCollection {
+  if (!fc || typeof fc !== 'object') return false;
+  const o = fc as { type?: string; features?: unknown };
+  return o.type === 'FeatureCollection' && Array.isArray(o.features) && o.features.length > 0;
+}
 
 /**
  * Renders the per-layer FeatureCollections returned by `analyze-area`
- * directly on the Leaflet map. Each layer's visibility is gated by the
- * existing `mapStore.activeLayers` toggles, so the user can show / hide
- * categories from the top bar without re-running the analysis.
+ * on the Leaflet map. Visibility follows **which layers the server returned**
+ * (non-empty FeatureCollections), not `mapStore.activeLayers` — those toggles
+ * control mock/static overlays and were hiding analysis markers when "תאונות"
+ * was switched off in the layers card.
  *
- * Points become small circle markers; lines and polygons render as paths
- * styled with the layer's accent colour.
+ * Uses an SVG renderer + high z-index pane so circles stay visible on top of
+ * `preferCanvas` raster maps (Canvas default path renderer can bury GeoJSON).
  */
 export function AnalysisResultsLayer(): JSX.Element | null {
+  const map = useMap();
   const results = useAnalysisStore((s) => s.results);
-  const activeLayers = useMapStore((s) => s.activeLayers);
+  const svgRenderersRef = useRef<Partial<Record<AnalysisLayerKey, L.SVG>>>({});
+
+  useEffect(() => {
+    if (map.getPane(ANALYSIS_PANE)) return;
+    const pane = map.createPane(ANALYSIS_PANE);
+    pane.style.zIndex = '650';
+  }, [map]);
+
+  const getSvgRenderer = (key: AnalysisLayerKey): L.SVG => {
+    let r = svgRenderersRef.current[key];
+    if (!r) {
+      r = L.svg({ padding: 0.25 });
+      svgRenderersRef.current[key] = r;
+    }
+    return r;
+  };
 
   const visibleLayers = useMemo(() => {
     if (!results) return [] as AnalysisLayerKey[];
-    return (Object.keys(PALETTE) as AnalysisLayerKey[]).filter(
-      (key) => results[key] && activeLayers[ANALYSIS_TO_MAP[key]] !== false
-    );
-  }, [results, activeLayers]);
+    return (Object.keys(PALETTE) as AnalysisLayerKey[]).filter((key) => {
+      const lr = results[key];
+      return lr != null && isNonEmptyFeatureCollection(lr.features);
+    });
+  }, [results]);
 
   if (visibleLayers.length === 0 || !results) return null;
 
@@ -58,6 +70,7 @@ export function AnalysisResultsLayer(): JSX.Element | null {
         return (
           <GeoJSON
             key={dataKey}
+            pane={ANALYSIS_PANE}
             data={layer.features}
             pointToLayer={(feature, latlng) => {
               let radius = 5;
@@ -69,13 +82,15 @@ export function AnalysisResultsLayer(): JSX.Element | null {
               }
               return L.circleMarker(latlng, {
                 radius,
-                color: colour,
-                weight: 1.5,
+                renderer: getSvgRenderer(key),
+                color: key === 'accidents' ? 'rgba(255,255,255,0.92)' : colour,
+                weight: key === 'accidents' ? 2 : 1.5,
                 fillColor: colour,
                 fillOpacity: 0.85,
               });
             }}
             style={() => ({
+              renderer: getSvgRenderer(key),
               color: colour,
               weight: 2.5,
               opacity: 0.9,

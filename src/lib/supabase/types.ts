@@ -735,6 +735,39 @@ export type Database = {
           },
         ];
       };
+      road_authority_network: {
+        Row: {
+          id: number;
+          trafcode: number | null;
+          trafauth: string | null;
+          roadname: string | null;
+          roadnumber: number | null;
+          yearmonth: number | null;
+          shape_leng: number | null;
+          geom: PgGeometry;
+        };
+        Insert: {
+          id?: number;
+          trafcode?: number | null;
+          trafauth?: string | null;
+          roadname?: string | null;
+          roadnumber?: number | null;
+          yearmonth?: number | null;
+          shape_leng?: number | null;
+          geom: PgGeometry;
+        };
+        Update: {
+          id?: number;
+          trafcode?: number | null;
+          trafauth?: string | null;
+          roadname?: string | null;
+          roadnumber?: number | null;
+          yearmonth?: number | null;
+          shape_leng?: number | null;
+          geom?: PgGeometry;
+        };
+        Relationships: [];
+      };
       traffic_count_stations: {
         Row: {
           id: number;
@@ -897,6 +930,51 @@ export type Database = {
             distance_m: number;
           }>;
           polygon_area_m2: number;
+        };
+      };
+      plan_transit_route: {
+        Args: {
+          origin_lng: number;
+          origin_lat: number;
+          dest_lng: number;
+          dest_lat: number;
+          max_walk_meters?: number;
+          max_stops_per_end?: number;
+          max_results?: number;
+        };
+        Returns: {
+          origin: { lng: number; lat: number };
+          destination: { lng: number; lat: number };
+          /** Optional warning emitted by the RPC (e.g. point outside Israel envelope). */
+          warning?: string;
+          options: Array<{
+            route_id: number;
+            route_short_name: string | null;
+            route_long_name: string | null;
+            route_type: number | null;
+            direction_id: number;
+            from_stop: {
+              stop_id: number;
+              stop_name: string;
+              lat: number;
+              lng: number;
+            };
+            to_stop: {
+              stop_id: number;
+              stop_name: string;
+              lat: number;
+              lng: number;
+            };
+            walk_to_stop_m: number;
+            walk_from_stop_m: number;
+            total_walk_m: number;
+            transit_distance_m: number;
+            /** GeoJSON LineString of the in-vehicle segment along the route shape. */
+            shape_segment: {
+              type: 'LineString';
+              coordinates: Array<[number, number]>;
+            } | null;
+          }>;
         };
       };
     };

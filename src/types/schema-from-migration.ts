@@ -70,6 +70,10 @@ export type RoadsRow = Tables['roads']['Row'];
 export type RoadsInsert = Tables['roads']['Insert'];
 export type RoadsUpdate = Tables['roads']['Update'];
 
+export type RoadAuthorityNetworkRow = Tables['road_authority_network']['Row'];
+export type RoadAuthorityNetworkInsert = Tables['road_authority_network']['Insert'];
+export type RoadAuthorityNetworkUpdate = Tables['road_authority_network']['Update'];
+
 // --- תשתיות ---
 
 export type InfraRailwayStationsRow = Tables['infra_railway_stations']['Row'];
@@ -125,6 +129,7 @@ export type TableRows = {
   accidents: AccidentsRow;
   road_authorities: RoadAuthoritiesRow;
   roads: RoadsRow;
+  road_authority_network: RoadAuthorityNetworkRow;
   infra_railway_stations: InfraRailwayStationsRow;
   infra_railway_lines: InfraRailwayLinesRow;
   infra_metro_lines: InfraMetroLinesRow;

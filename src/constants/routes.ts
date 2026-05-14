@@ -8,6 +8,7 @@ export const ROUTES = {
   MAP: '/map',
   ACCIDENTS: '/accidents',
   TRANSIT: '/transit',
+  ROUTE_PLANNER: '/route-planner',
   INFRASTRUCTURE: '/infrastructure',
   SOURCES: '/sources',
   HISTORY: '/history',

@@ -8,17 +8,38 @@
 - Current version: derived from `GTFS_VERSION` when provided, otherwise the SHA-256 hash prefix of `shapes.txt`.
 - Loaded table: `gtfs_shapes`, compressed to one LineString per `shape_id`.
 
-## Road authority segments (roadauthority.csv)
+## Road authority — רשת כבישים (ROADAUTHORITY)
 
-- Source: [data.gov.il — roadauthority dataset](https://data.gov.il/dataset/roadauthority)
-- File: `roadauthority.csv` (spatial segments by traffic authority).
+- מקור: [data.gov.il — roadauthority](https://data.gov.il/dataset/roadauthority)
+- גרסת נתונים לדוגמה בפרויקט: עד **אפריל 2026** (קבצים תחת `input/`, לפי `YEARMONTH` בקובץ הטבולרי).
 
-### השוואה בין קובץ ישן לקובץ חדש (הורדות מ-data.gov.il)
+### מעבר משכבה ישנה (AREA_AUTHORITY) לשכבה מעודכנת (ROADAUTHORITY)
 
-- **מבנה הנתונים (Schema):** אין שינוי במבנה העמודות. לא נוספו ולא ירדו שדות. שמות העמודות נותרו זהים לחלוטין: `OID`, `TRAFCODE`, `TRAFAUTH`, `ROADNAME`, `ROADNUMBER`, `YEARMONTH`, `Shape_Length`.
-- **שינוי סוגי נתונים (Data Types):** הנתונים בעמודות `ROADNUMBER` ו-`YEARMONTH` עברו מפורמט עשרוני (Float - למשל `1.0` או `202007.0`) לפורמט מספר שלם (Integer - למשל `1` או `202007`).
-- **רמת דיוק (Precision):** עמודת אורך המקטע (`Shape_Length`) מציגה בקובץ החדש רמת דיוק גבוהה יותר עם יותר ספרות אחרי הנקודה העשרונית.
-- **נפח הנתונים:** נוספו שורות מידע חדשות לקובץ.
+| היבט | ישן (AREA_AUTHORITY) | מעודכן (ROADAUTHORITY) |
+|------|----------------------|-------------------------|
+| גיאומטריה | Polygon (שטחי רשות) | **LineString** — מקטעי רשת כבישים |
+| שם כביש / מקטע | לרוב `NAME` | **`ROADNAME`** |
+| מספר כביש | לא תמיד ממופה כמספר שלם | **`ROADNUMBER`** (מספר שלם) |
+| שטח | `Shape_Area` | **הוסר** — רלוונטי רק לפוליגונים |
+| מפתח לחיבור לנתונים טבולריים | `TRAFCODE` | **`TRAFCODE`** (ללא שינוי) |
+
+### קובץ טבולרי (`roadauthority.csv` / `roadauthority - update.csv`)
+
+- שורה לכל מקטע; עמודות: `OID`, `TRAFCODE`, `TRAFAUTH`, `ROADNAME`, `ROADNUMBER`, `YEARMONTH`, `Shape_Length`.
+- בגרסה המעודכנת: `ROADNUMBER` ו-`YEARMONTH` כמספרים שלמים (לא Float עם `.0`).
+- אורך המקטע (`Shape_Length`) עם דיוק עשרוני גבוה יותר בגרסה החדשה.
+
+### שכבה מרחבית (Shapefile ROADAUTHORITY)
+
+- נתיב מקומי מומלץ: `input/roadauthority_shp/ROADAUTHORITY.shp` (יש להשלים קבצי `.shp`/`.dbf`/`.shx` לצד `.prj`).
+- מערכת קואורדינטות: **EPSG:2039** (ישראל TM Grid / ITM) — תואם ל-`.prj` בפרויקט.
+- טעינה ל-Supabase: טבלה `public.road_authority_network` (עמודות snake_case: `trafcode`, `trafauth`, `roadname`, `roadnumber`, `yearmonth`, `shape_leng`, `geom`).
+- סקריפט העלאה (TypeScript): `npm run upload:road-authority` — `scripts/upload-road-authority-network.ts` (דורש `DATABASE_URL` או שם מקביל, או `SUPABASE_DB_PASS` + `VITE_SUPABASE_URL` לגזירת מארח; `pg` + `shpjs` כבר בפרויקט).
+
+### טבלאות Postgres רלוונטיות
+
+- **`road_authority_network`** — גיאומטריית המקור לשאילתות מפה (LineString, SRID 2039). ה-RPC `query_roads_in_polygon` ממיר ל-4326 בזמן ריצה.
+- **`roads`** — טבלת legacy בפרויקט (LineString, 4326 + `authority_id`); ניתן להשאיר ריקה או למחוק לאחר מעבר מלא לרשת החדשה.
 
 ## Vehicle traffic counts (ספירות תנועה)
 

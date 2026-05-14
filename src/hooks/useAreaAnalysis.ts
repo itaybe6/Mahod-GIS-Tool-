@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
-import { useAnalysisStore, type LayerResult } from '@/stores/analysisStore';
+import { useAnalysisStore, type AnalysisResults, type LayerResult } from '@/stores/analysisStore';
+import { useMapStore } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
 import { useUIStore } from '@/stores/uiStore';
+import type { LayerKey } from '@/types/common';
 
 interface EdgeResponse {
-  results?: Partial<Record<'transit' | 'accidents' | 'roads' | 'infrastructure', LayerResult>>;
+  results?: Partial<Record<keyof AnalysisResults, LayerResult>>;
   errors?: Partial<Record<string, string>>;
   durationMs?: number;
   error?: string;
@@ -86,6 +88,23 @@ export function useAreaAnalysis(): {
       const results = (data.results ?? {}) as Parameters<typeof setResults>[0];
       const durationMs = data.durationMs ?? Math.round(performance.now() - startedAt);
       setResults(results, durationMs);
+
+      for (const k of Object.keys(results) as (keyof AnalysisResults)[]) {
+        if (results[k]) {
+          useMapStore.getState().setLayer(k as LayerKey, true);
+        }
+      }
+
+      if (selection.accidents && !data.errors?.accidents) {
+        const acc = results.accidents;
+        const n = acc?.features?.features?.length ?? 0;
+        if (n === 0) {
+          showToast(
+            'לא נמצאו נקודות תאונות באזור (אין התאמת citycode ליישובים חופפים, או שהמיגרציה query_accidents_points_per_taz לא רצה על פרויקט זה).',
+            6500
+          );
+        }
+      }
 
       const partial = data.errors ? Object.keys(data.errors).length : 0;
       const totalCount = Object.values(results).reduce(

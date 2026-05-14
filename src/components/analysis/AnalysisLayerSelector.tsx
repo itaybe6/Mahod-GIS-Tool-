@@ -1,4 +1,4 @@
-import { Bus, AlertTriangle, Route, Train, Gauge } from 'lucide-react';
+import { Bus, AlertOctagon, Route, Train, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useAnalysisStore,
@@ -22,8 +22,9 @@ const LAYERS: LayerEntry[] = [
   {
     key: 'accidents',
     title: 'תאונות דרכים',
-    description: 'אגרגט תאונות CBS לפי אזור TAZ, מוצג לפי יישוב בתוך הפוליגון',
-    icon: AlertTriangle,
+    description:
+      'נקודה אדומה לכל אזור TAZ (אגרגט CBS) ביישובים שחותכים את הפוליגון — מיקום משוער סביב מרכז היישוב',
+    icon: AlertOctagon,
   },
   {
     key: 'roads',

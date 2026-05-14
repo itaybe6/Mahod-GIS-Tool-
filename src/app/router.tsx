@@ -5,6 +5,8 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { MapPage } from '@/features/map/MapPage';
 import { AccidentsPage } from '@/features/accidents/AccidentsPage';
 import { TransitPage } from '@/features/transit/TransitPage';
+import { RoutePlannerPage } from '@/features/route-planner/RoutePlannerPage';
+import { RoutePlannerPanel } from '@/features/route-planner/components/RoutePlannerPanel';
 import { InfrastructurePage } from '@/features/infrastructure/InfrastructurePage';
 import { SourcesPage } from '@/features/sources/SourcesPage';
 import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
@@ -48,6 +50,14 @@ export function AppRouter(): JSX.Element {
         element={
           <AppShell>
             <TransitPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path={ROUTES.ROUTE_PLANNER}
+        element={
+          <AppShell rightPanel={<RoutePlannerPanel />}>
+            <RoutePlannerPage />
           </AppShell>
         }
       />

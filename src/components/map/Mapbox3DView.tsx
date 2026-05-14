@@ -329,7 +329,8 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
           'circle-color': '#10b981',
           'circle-opacity': 0.9,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': 'rgba(255,255,255,0.75)',
+          'circle-stroke-color': 'rgba(5,8,16,0.75)',
+          'circle-emissive-strength': 0.9,
         },
       });
 

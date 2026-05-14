@@ -84,10 +84,14 @@ export function LayerToggle(): JSX.Element {
               className={cn(
                 'h-2 w-2 rounded-full ring-offset-1 transition-all',
                 isActive
-                  ? 'ring-2 ring-white/80 ring-offset-brand-teal'
+                  ? 'ring-2 ring-bg-1/80 ring-offset-brand-teal'
                   : 'ring-1 ring-white/15 ring-offset-bg-2'
               )}
-              style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotColor}66` }}
+              style={{
+                backgroundColor: dotColor,
+                boxShadow: `0 0 8px ${dotColor}66`,
+                border: isActive ? '1px solid rgba(5, 8, 16, 0.7)' : undefined,
+              }}
             />
             {meta.label}
           </button>
