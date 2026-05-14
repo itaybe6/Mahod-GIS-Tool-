@@ -1,5 +1,3 @@
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
 
 import { renderCell } from '../formatters';
@@ -32,7 +30,7 @@ export function DataTable({
   errorMessage,
 }: DataTableProps): JSX.Element {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-card">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-surface to-bg-1 shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
       {isFetching && !isLoading && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden">
           <div className="top-loader" />
@@ -41,7 +39,7 @@ export function DataTable({
 
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="min-w-full border-separate border-spacing-0 text-start">
-          <thead className="sticky top-0 z-10 bg-surface-2/95 backdrop-blur">
+          <thead className="sticky top-0 z-10 bg-gradient-to-l from-slate-900/95 via-surface-2/95 to-slate-900/95 backdrop-blur">
             <tr>
               {config.columns.map((col) => (
                 <HeaderCell
@@ -85,13 +83,16 @@ export function DataTable({
               rows.map((row, idx) => (
                 <tr
                   key={config.rowKey ? config.rowKey(row) : idx}
-                  className="group transition-colors hover:bg-white/[0.025]"
+                  className={cn(
+                    'group transition-all duration-150 hover:bg-brand-teal/[0.055]',
+                    idx % 2 === 1 && 'bg-white/[0.015]'
+                  )}
                 >
                   {config.columns.map((col) => (
                     <td
                       key={col.key}
                       className={cn(
-                        'border-t border-border px-3 py-2.5 align-top',
+                        'border-t border-white/[0.07] px-3 py-2.5 align-top text-[12.5px] text-text-dim transition-colors group-hover:text-text',
                         col.align === 'center' && 'text-center',
                         col.align === 'end' && 'text-end',
                         col.width
@@ -123,7 +124,7 @@ function HeaderCell({ column, sortIndex, sortDir, onToggle }: HeaderCellProps): 
     <th
       scope="col"
       className={cn(
-        'sticky top-0 select-none border-b border-border bg-surface-2/95 px-3 py-2 text-start text-[11.5px] font-semibold uppercase tracking-wider text-text-dim backdrop-blur',
+        'sticky top-0 select-none border-b border-brand-teal/25 bg-transparent px-3 py-3 text-start text-[13.5px] font-bold uppercase tracking-[0.08em] text-white shadow-[inset_0_-1px_rgba(255,255,255,0.06)]',
         column.align === 'center' && 'text-center',
         column.align === 'end' && 'text-end',
         column.width
@@ -138,45 +139,22 @@ function HeaderCell({ column, sortIndex, sortDir, onToggle }: HeaderCellProps): 
             'לחץ למיון. החזק Shift+לחיצה כדי להוסיף לעמודות מיון נוספות (מיון מתקדם).'
           }
           className={cn(
-            'group/h inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors',
-            'hover:bg-white/[0.06] hover:text-text',
-            sortDir && 'text-brand-teal'
+            'group/h inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 transition-all',
+            'hover:bg-white/[0.08] hover:text-white',
+            sortDir && 'bg-brand-teal/10 text-brand-teal'
           )}
         >
-          <span>{column.label}</span>
-          <SortIndicator dir={sortDir} index={sortIndex} />
+          <span className="drop-shadow-sm">{column.label}</span>
+          {sortIndex >= 0 && (
+            <span className="rounded-full border border-brand-teal/30 bg-brand-teal/20 px-1.5 font-mono text-[10px] text-brand-teal">
+              {sortIndex + 1}
+            </span>
+          )}
         </button>
       ) : (
-        <span className="px-1">{column.label}</span>
+        <span className="px-1 drop-shadow-sm">{column.label}</span>
       )}
     </th>
-  );
-}
-
-function SortIndicator({
-  dir,
-  index,
-}: {
-  dir: 'asc' | 'desc' | undefined;
-  index: number;
-}): JSX.Element {
-  if (!dir) {
-    return (
-      <ArrowUpDown
-        size={12}
-        className="opacity-40 transition-opacity group-hover/h:opacity-80"
-        aria-hidden
-      />
-    );
-  }
-  const Icon = dir === 'asc' ? ArrowUp : ArrowDown;
-  return (
-    <span className="inline-flex items-center gap-1 text-brand-teal">
-      <Icon size={12} aria-hidden />
-      {index >= 0 && (
-        <span className="rounded bg-brand-teal/15 px-1 font-mono text-[9.5px]">{index + 1}</span>
-      )}
-    </span>
   );
 }
 
@@ -186,8 +164,8 @@ function SkeletonRows({ columns }: { columns: ColumnDef[] }): JSX.Element {
       {Array.from({ length: 8 }).map((_, rowIdx) => (
         <tr key={rowIdx}>
           {columns.map((col) => (
-            <td key={col.key} className="border-t border-border px-3 py-3">
-              <span className="block h-3 w-full animate-pulse rounded bg-white/[0.04]" />
+            <td key={col.key} className="border-t border-white/[0.07] px-3 py-3">
+              <span className="block h-3 w-full animate-pulse rounded-full bg-white/[0.06]" />
             </td>
           ))}
         </tr>

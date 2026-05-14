@@ -70,6 +70,14 @@ export function TransitPage(): JSX.Element {
   const config = findTableConfig(activeName, tablesList) ?? tablesList[0]!;
   const state = tableStates[activeName] ?? FALLBACK_STATE;
   const debouncedSearch = useDebounce(state.search, 300);
+  const sortableKeys = useMemo(
+    () => new Set(config.columns.filter((column) => column.sortable ?? true).map((column) => column.key)),
+    [config]
+  );
+  const activeSorts = useMemo(
+    () => state.sorts.filter((sort) => sortableKeys.has(sort.key)),
+    [state.sorts, sortableKeys]
+  );
 
   useEffect(() => {
     setTableStates((prev) => {
@@ -79,14 +87,26 @@ export function TransitPage(): JSX.Element {
     });
   }, [debouncedSearch, activeName]);
 
+  useEffect(() => {
+    setTableStates((prev) => {
+      const current = prev[activeName] ?? FALLBACK_STATE;
+      if (current.sorts.length === 0) return prev;
+
+      const nextSorts = current.sorts.filter((sort) => sortableKeys.has(sort.key));
+      if (nextSorts.length === current.sorts.length) return prev;
+
+      return { ...prev, [activeName]: { ...current, sorts: nextSorts, page: 0 } };
+    });
+  }, [activeName, sortableKeys]);
+
   const queryParams = useMemo(
     () => ({
       search: debouncedSearch,
-      sorts: state.sorts,
+      sorts: activeSorts,
       page: state.page,
       pageSize: state.pageSize,
     }),
-    [debouncedSearch, state.sorts, state.page, state.pageSize]
+    [debouncedSearch, activeSorts, state.page, state.pageSize]
   );
 
   const { data, isLoading, isFetching, isError, error, refetch } = useGtfsTable(
@@ -198,16 +218,18 @@ export function TransitPage(): JSX.Element {
           <SearchBar
             value={state.search}
             onChange={(v) => patchState({ search: v })}
-            placeholder={`חיפוש בטבלת "${config.label}" — שם, מס׳, תאריך…`}
+            placeholder={config.searchPlaceholder ?? `חיפוש בטבלת "${config.label}"`}
             isFetching={isSearchPending}
           />
-          <SortControls
-            config={config}
-            sorts={state.sorts}
-            onChange={(next) => patchState({ sorts: next, page: 0 })}
-          />
+          {!config.disableAdvancedSort && (
+            <SortControls
+              config={config}
+              sorts={activeSorts}
+              onChange={(next) => patchState({ sorts: next, page: 0 })}
+            />
+          )}
 
-          {(isFiltered || state.sorts.length > 0) && (
+          {(isFiltered || activeSorts.length > 0) && (
             <button
               type="button"
               onClick={() => patchState({ search: '', sorts: [], page: 0 })}
@@ -233,7 +255,7 @@ export function TransitPage(): JSX.Element {
       <DataTable
         config={config}
         rows={data?.rows ?? []}
-        sorts={state.sorts.length ? state.sorts : config.defaultSort}
+        sorts={activeSorts.length ? activeSorts : config.defaultSort}
         onToggleSort={handleToggleSort}
         isLoading={isLoading}
         isFetching={isFetching}

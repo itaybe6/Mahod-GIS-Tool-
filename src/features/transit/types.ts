@@ -32,17 +32,29 @@ export interface TableConfig {
   label: string;
   /** Optional short Hebrew description (shown in the picker). */
   description?: string;
+  /** Placeholder shown in the table search field. */
+  searchPlaceholder?: string;
   /** Sidebar / tab icon. */
   icon: LucideIcon;
   /** Default sort applied when the page is first opened. */
   defaultSort: SortSpec[];
   /** Ordered list of columns. The first column also acts as the row identifier. */
   columns: ColumnDef[];
+  /** Optional quick-sort presets shown in the advanced-sort popover. */
+  sortPresets?: SortPreset[];
+  /** When true, the advanced-sort button is hidden for this table. */
+  disableAdvancedSort?: boolean;
   /**
    * Optional unique-key builder for React rendering. Defaults to a JSON
    * serialization of the first non-null primary-key-like column.
    */
   rowKey?: (row: Record<string, unknown>) => string;
+}
+
+export interface SortPreset {
+  label: string;
+  key: string;
+  dir: 'asc' | 'desc';
 }
 
 export interface SortSpec {

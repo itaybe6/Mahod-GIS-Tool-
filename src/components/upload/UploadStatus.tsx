@@ -4,9 +4,9 @@ import { useUploadStore } from '@/stores/uploadStore';
 import { useUIStore } from '@/stores/uiStore';
 
 /**
- * Lightweight status card shown directly under the dropzone. Surfaces the
- * upload outcome (parsing / ready / error) and lets the user clear the
- * polygon — which automatically unmounts the GeoJSON layer on the map.
+ * Status card that replaces the dropzone while a file is being parsed or after
+ * a successful / failed upload. Clears back to the empty dropzone when the user
+ * removes the polygon.
  */
 export function UploadStatus(): JSX.Element | null {
   const status = useUploadStore((s) => s.status);

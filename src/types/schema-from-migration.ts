@@ -66,10 +66,6 @@ export type RoadAuthoritiesRow = Tables['road_authorities']['Row'];
 export type RoadAuthoritiesInsert = Tables['road_authorities']['Insert'];
 export type RoadAuthoritiesUpdate = Tables['road_authorities']['Update'];
 
-export type RoadsRow = Tables['roads']['Row'];
-export type RoadsInsert = Tables['roads']['Insert'];
-export type RoadsUpdate = Tables['roads']['Update'];
-
 export type RoadAuthorityNetworkRow = Tables['road_authority_network']['Row'];
 export type RoadAuthorityNetworkInsert = Tables['road_authority_network']['Insert'];
 export type RoadAuthorityNetworkUpdate = Tables['road_authority_network']['Update'];
@@ -128,7 +124,6 @@ export type TableRows = {
   gtfs_stop_route: GtfsStopRouteRow;
   accidents: AccidentsRow;
   road_authorities: RoadAuthoritiesRow;
-  roads: RoadsRow;
   road_authority_network: RoadAuthorityNetworkRow;
   infra_railway_stations: InfraRailwayStationsRow;
   infra_railway_lines: InfraRailwayLinesRow;

@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import type { MapType } from '@/constants/mapConfig';
 import type { LayerKey } from '@/types/common';
 
+export interface FocusAnalysisFeature {
+  layerKey: LayerKey;
+  featureIndex: number;
+}
+
 /** Drives one-shot fly / fit from toolbar geocode (Leaflet + Mapbox GL). */
 export interface MapFocusRequest {
   seq: number;
@@ -29,6 +34,8 @@ interface MapState {
   focusRequest: MapFocusRequest | null;
   /** Last successful geocode camera — reapplied when entering Mapbox GL if no upload bbox. */
   lastGeocodeCamera: LastGeocodeCamera | null;
+  /** When set, AnalysisResultsLayer flies to this feature and opens its popup. */
+  focusAnalysisFeature: FocusAnalysisFeature | null;
 
   setMapType: (type: MapType) => void;
   toggleLayer: (layer: LayerKey) => void;
@@ -41,6 +48,8 @@ interface MapState {
     bbox?: [number, number, number, number]
   ) => void;
   clearMapFocusRequest: () => void;
+  setFocusAnalysisFeature: (v: FocusAnalysisFeature) => void;
+  clearFocusAnalysisFeature: () => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -55,6 +64,7 @@ export const useMapStore = create<MapState>((set) => ({
   activeDomain: 'transit',
   focusRequest: null,
   lastGeocodeCamera: null,
+  focusAnalysisFeature: null,
 
   setMapType: (type) => set({ mapType: type }),
   toggleLayer: (layer) =>
@@ -79,4 +89,6 @@ export const useMapStore = create<MapState>((set) => ({
       return { focusRequest, lastGeocodeCamera };
     }),
   clearMapFocusRequest: () => set({ focusRequest: null }),
+  setFocusAnalysisFeature: (v) => set({ focusAnalysisFeature: v }),
+  clearFocusAnalysisFeature: () => set({ focusAnalysisFeature: null }),
 }));

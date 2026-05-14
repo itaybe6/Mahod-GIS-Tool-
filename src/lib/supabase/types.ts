@@ -48,6 +48,7 @@ export type Database = {
           citycode: number | null;
           shape_length: string | null;
           shape_area: string | null;
+          geom: PgGeometry | null;
           source_version: string | null;
           updated_at: string;
         };
@@ -80,6 +81,7 @@ export type Database = {
           citycode?: number | null;
           shape_length?: string | null;
           shape_area?: string | null;
+          geom?: PgGeometry | null;
           source_version?: string | null;
           updated_at?: string;
         };
@@ -112,6 +114,7 @@ export type Database = {
           citycode?: number | null;
           shape_length?: string | null;
           shape_area?: string | null;
+          geom?: PgGeometry | null;
           source_version?: string | null;
           updated_at?: string;
         };
@@ -685,56 +688,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      roads: {
-        Row: {
-          id: number;
-          oid_original: number | null;
-          trafcode: number | null;
-          authority_id: number | null;
-          road_name: string | null;
-          road_number: number | null;
-          year_month: string | null;
-          shape_length: string | null;
-          geom: PgGeometry | null;
-          source_version: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: number;
-          oid_original?: number | null;
-          trafcode?: number | null;
-          authority_id?: number | null;
-          road_name?: string | null;
-          road_number?: number | null;
-          year_month?: string | null;
-          shape_length?: string | null;
-          geom?: PgGeometry | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          id?: number;
-          oid_original?: number | null;
-          trafcode?: number | null;
-          authority_id?: number | null;
-          road_name?: string | null;
-          road_number?: number | null;
-          year_month?: string | null;
-          shape_length?: string | null;
-          geom?: PgGeometry | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'roads_authority_id_fkey';
-            columns: ['authority_id'];
-            isOneToOne: false;
-            referencedRelation: 'road_authorities';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       road_authority_network: {
         Row: {
           id: number;
@@ -900,6 +853,85 @@ export type Database = {
       };
     };
     Views: {
+      v_accidents_kpi: {
+        Row: {
+          total_accidents: number;
+          total_fatalities: number;
+          fatality_rate: number | null;
+          most_dangerous_city: string | null;
+          most_dangerous_city_accidents: number | null;
+        };
+        Relationships: [];
+      };
+      v_city_danger_ranking: {
+        Row: {
+          rank: number;
+          city: string;
+          total_accidents: number;
+          fatalities: number;
+          severe_injuries: number;
+          light_injuries: number;
+          pedestrian_injuries: number;
+          total_injuries: number;
+          population: number;
+          area_sqm: number;
+          severity_score: number;
+          rate_per_1000_residents: number | null;
+          density_per_sqkm: number | null;
+          fatality_rate: number | null;
+          pedestrian_share: number | null;
+          severity_tone: 'red' | 'orange' | 'yellow' | 'green';
+        };
+        Relationships: [];
+      };
+      v_statistical_hotspots: {
+        Row: {
+          city: string;
+          area_id: number;
+          accidents: number;
+          population: number;
+          rate_per_1000_residents: number | null;
+          z_score: number | null;
+          is_hotspot: boolean;
+        };
+        Relationships: [];
+      };
+      v_accidents_demographics_by_city: {
+        Row: {
+          city: string;
+          inj0_19: number;
+          inj20_64: number;
+          inj65_: number;
+          injtotal: number;
+          private_vehicle: number;
+          motorcycle: number;
+          truck: number;
+          bicycle: number;
+          pedestrian: number;
+        };
+        Relationships: [];
+      };
+      v_accidents_land_use: {
+        Row: {
+          mainuse: string;
+          total_accidents: number;
+          area_sqm: number;
+          intensity_per_sqkm: number | null;
+          intensity_vs_average: number | null;
+        };
+        Relationships: [];
+      };
+      v_accidents_insights: {
+        Row: {
+          id: string;
+          title: string;
+          body: string;
+          metric_value: number | null;
+          metric_unit: string;
+          tone: 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
+        };
+        Relationships: [];
+      };
       v_accidents_with_municipality: {
         Row: Database['public']['Tables']['accidents']['Row'] & {
           municipality_name: string | null;
@@ -931,6 +963,15 @@ export type Database = {
           }>;
           polygon_area_m2: number;
         };
+      };
+      get_accident_clusters: {
+        Args: { min_accidents?: number };
+        Returns: Array<{
+          cluster_id: number;
+          member_count: number;
+          total_accidents_in_cluster: number;
+          cluster_centroid: Json | null;
+        }>;
       };
       plan_transit_route: {
         Args: {

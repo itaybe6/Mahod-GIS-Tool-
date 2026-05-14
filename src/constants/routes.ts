@@ -6,6 +6,7 @@
 export const ROUTES = {
   DASHBOARD: '/',
   MAP: '/map',
+  STATISTICS: '/statistics',
   ACCIDENTS: '/accidents',
   TRANSIT: '/transit',
   ROUTE_PLANNER: '/route-planner',

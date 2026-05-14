@@ -8,6 +8,12 @@ This reduces the table from millions of rows to roughly 50K rows and cuts storag
 
 The trade-off is that per-point attributes are no longer queryable as first-class rows. GTFS shapes do not carry timing data, but if future feeds include point-level metadata we will need either a side table or a separate raw archive.
 
+## מיון מתקדם דינמי לפי טבלת GTFS פעילה
+
+בעמוד `תחבורה ציבורית`, רכיב `SortControls` מקבל את ה-`TableConfig` של הכרטיס הפעיל (`חברות תחבורה`, `קווים`, `תחנות`, `לוחות שירות`, `נסיעות`, וכו׳) ומציג רק עמודות שמוגדרות באותה טבלה וניתנות למיון. כך, בחירה ב-`קווים` מציגה שדות כמו מס׳ קו, שם קו וסוג; בחירה ב-`תחנות` מציגה שדות תחנה וקואורדינטות; וכן הלאה.
+
+בנוסף, לפני הרצת שאילתת Supabase ולפני ציור מצב המיון בטבלה, ה-state מסונן מול רשימת העמודות התקפה של הטבלה הפעילה. זה מונע מצב שבו מיון שנבחר בטבלה אחת ממשיך בטעות לטבלה אחרת עם שם עמודה שלא קיים בה.
+
 ## Client-Side Shapefile Parsing
 
 העלאת ZIP של Shapefile (לדוגמה `sample_data/test.zip`) מפורסרת לחלוטין בדפדפן באמצעות `shpjs`, שמטפל בחילוץ ה-ZIP, בקריאת `.shp/.shx/.dbf/.prj/.cpg`, ובהמרת קואורדינטות ל-WGS84 דרך `proj4`. הפלט הוא `FeatureCollection` יחיד שמשותף בין Leaflet (`<GeoJSON>`) לבין Mapbox GL (`addSource`/`addLayer` של `fill` + `line`).

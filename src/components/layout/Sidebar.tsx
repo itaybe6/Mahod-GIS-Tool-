@@ -32,7 +32,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: ROUTES.DASHBOARD, label: 'דשבורד ראשי', icon: LayoutDashboard },
       { to: ROUTES.MAP, label: 'מפה אינטראקטיבית', icon: Map },
-      { to: ROUTES.ACCIDENTS, label: 'ניתוח תאונות', icon: AlertTriangle, badge: '2.8K' },
+      { to: ROUTES.STATISTICS, label: 'סטטיסטיקות תאונות', icon: AlertTriangle, badge: '2.8K' },
       { to: ROUTES.TRANSIT, label: 'תחבורה ציבורית', icon: Bus },
       { to: ROUTES.ROUTE_PLANNER, label: 'תכנון מסלול A→B', icon: Navigation, badge: 'חדש' },
       { to: ROUTES.INFRASTRUCTURE, label: 'תשתיות', icon: Building2 },

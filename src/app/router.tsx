@@ -3,7 +3,7 @@ import { ROUTES } from '@/constants/routes';
 import { AppShell } from '@/components/layout/AppShell';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { MapPage } from '@/features/map/MapPage';
-import { AccidentsPage } from '@/features/accidents/AccidentsPage';
+import { StatisticsPage } from '@/features/statistics/StatisticsPage';
 import { TransitPage } from '@/features/transit/TransitPage';
 import { RoutePlannerPage } from '@/features/route-planner/RoutePlannerPage';
 import { RoutePlannerPanel } from '@/features/route-planner/components/RoutePlannerPanel';
@@ -38,13 +38,14 @@ export function AppRouter(): JSX.Element {
         }
       />
       <Route
-        path={ROUTES.ACCIDENTS}
+        path={ROUTES.STATISTICS}
         element={
           <AppShell>
-            <AccidentsPage />
+            <StatisticsPage />
           </AppShell>
         }
       />
+      <Route path={ROUTES.ACCIDENTS} element={<Navigate to={ROUTES.STATISTICS} replace />} />
       <Route
         path={ROUTES.TRANSIT}
         element={

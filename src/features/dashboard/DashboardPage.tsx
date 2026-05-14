@@ -1,13 +1,14 @@
-import { AlertTriangle, Bus, Construction, Building2 } from 'lucide-react';
 import { MapView } from '@/components/map/MapContainer';
 import { MapSearch } from '@/components/map/MapSearch';
 import { MapTypeSelector } from '@/components/map/MapTypeSelector';
 import { LayerToggle } from '@/components/map/LayerToggle';
-import { StatPill } from '@/components/data/StatPill';
+import { AnalysisResultsCard } from '@/components/analysis/AnalysisResultsCard';
+import { AnalysisBottomSection } from './AnalysisBottomSection';
 
 /**
- * Top-level analytics dashboard — the screen captured in the reference UI.
- * Shows the live map with all 4 domains, plus the 4-KPI stats strip.
+ * Top-level analytics dashboard.
+ * Detailed analysis breakdown (`AnalysisResultsCard`) and the KPI strip
+ * (`AnalysisBottomSection`) both sit under the map — not in the right rail.
  */
 export function DashboardPage(): JSX.Element {
   return (
@@ -22,38 +23,11 @@ export function DashboardPage(): JSX.Element {
         <MapView />
       </div>
 
-      <div className="grid shrink-0 grid-cols-4 gap-2.5 max-[1024px]:grid-cols-2">
-        <StatPill
-          icon={AlertTriangle}
-          tone="red"
-          label="תאונות דרכים"
-          value="2,847"
-          trend="↑ 4.2%"
-          trendDirection="down"
-        />
-        <StatPill
-          icon={Bus}
-          tone="emerald"
-          label="קווי תח״צ"
-          value="342"
-          trend="↑ 1.1%"
-        />
-        <StatPill
-          icon={Construction}
-          tone="amber"
-          label="רשת כבישים"
-          value="1,205"
-          unit="ק״מ"
-          trend="↑ 0.3%"
-        />
-        <StatPill
-          icon={Building2}
-          tone="purple"
-          label="תשתיות"
-          value="89"
-          trend="↑ 2.5%"
-        />
+      <div className="min-h-0 shrink-0">
+        <AnalysisResultsCard />
       </div>
+
+      <AnalysisBottomSection />
     </div>
   );
 }

@@ -58,9 +58,9 @@ function TablePickerItem({
       title={config.description}
       aria-pressed={active}
       className={cn(
-        'group relative flex animate-fadein flex-col items-start gap-2 overflow-hidden rounded-md border bg-surface p-3 text-start transition-all',
+        'group relative flex min-h-[112px] animate-fadein flex-col items-start gap-2.5 overflow-hidden rounded-lg border bg-surface p-4 text-start transition-all',
         active
-          ? 'border-brand-teal/50 bg-brand-teal/5 shadow-[0_0_0_1px_rgba(46,170,111,0.4),0_8px_24px_rgba(46,170,111,0.12)]'
+          ? 'border-brand-teal/50 bg-brand-teal/5 shadow-[0_0_0_1px_rgba(46,170,111,0.4),0_10px_28px_rgba(46,170,111,0.14)]'
           : 'border-border hover:-translate-y-px hover:border-brand-teal/30'
       )}
     >
@@ -74,23 +74,23 @@ function TablePickerItem({
       <div className="flex w-full items-center justify-between gap-2">
         <div
           className={cn(
-            'grid h-8 w-8 place-items-center rounded-md transition-colors',
+            'grid h-9 w-9 place-items-center rounded-md transition-colors',
             active
               ? 'bg-brand-teal/15 text-brand-teal'
               : 'bg-bg-1 text-text-dim group-hover:text-brand-teal'
           )}
         >
-          <Icon size={16} />
+          <Icon size={18} />
         </div>
         {isLoadingCount && count == null ? (
-          <span className="block h-4 w-10 animate-pulse rounded bg-white/[0.05]" />
+          <span className="block h-4 w-12 animate-pulse rounded bg-white/[0.05]" />
         ) : (
           <span
             className={cn(
-              'rounded-full border px-1.5 py-0.5 font-mono text-[10.5px]',
+              'rounded-full border px-2 py-0.5 font-mono text-[11.5px]',
               active
                 ? 'border-brand-teal/40 bg-brand-teal/10 text-brand-teal'
-                : 'border-border bg-bg-1 text-text-faint'
+                : 'border-border bg-bg-1 text-text-dim'
             )}
             title={count != null ? `${formatCount(count)} רשומות` : undefined}
           >
@@ -100,11 +100,11 @@ function TablePickerItem({
       </div>
 
       <div className="min-w-0">
-        <div className={cn('truncate text-[13px] font-semibold', active ? 'text-text' : 'text-text')}>
+        <div className="truncate text-[15px] font-semibold text-text">
           {config.label}
         </div>
         {config.description && (
-          <div className="line-clamp-2 text-[11px] leading-snug text-text-faint">
+          <div className="line-clamp-2 text-[12.5px] font-medium leading-snug text-text-dim/95">
             {config.description}
           </div>
         )}

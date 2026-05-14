@@ -83,7 +83,7 @@ export function Dropzone({ onFiles, className }: DropzoneProps): JSX.Element {
       }}
       aria-busy={isParsing}
       className={cn(
-        'mb-2.5 cursor-pointer rounded-[10px] border-[1.5px] border-dashed px-3 py-4 text-center transition-all',
+        'cursor-pointer rounded-[10px] border-[1.5px] border-dashed px-3 py-4 text-center transition-all',
         isDragOver
           ? 'border-brand-teal bg-brand-teal/10'
           : 'border-brand-teal/35 hover:border-brand-teal',
