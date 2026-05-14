@@ -1,0 +1,64 @@
+---
+description: TypeScript code quality standards - mandatory rules for this project
+globs: **/*.ts,**/*.tsx
+alwaysApply: true
+---
+
+# איכות קוד TypeScript – חובה
+
+## strict mode
+
+`tsconfig` חייב לכלול `strict: true`. אסור להשתמש ב-`any` – רק טיפוסים מפורשים או `unknown` עם type-guard.
+
+```typescript
+// ❌ BAD
+function process(data: any) { ... }
+
+// ✅ GOOD
+function process(data: unknown) {
+  if (!isAccidentRecord(data)) throw new TypeError('Invalid data');
+  ...
+}
+```
+
+## מבנה מודולרי
+
+חלק את הקוד ל: `domains/`, `services/`, `controllers/`, `types/`. אל תערבב לוגיקת עסקים עם UI או DB ישירות.
+
+## Shared Types
+
+טיפוסים משותפים בין Frontend ל-Backend נמצאים תחת `types/` בשורש הפרויקט או בחבילה משותפת. לא מגדירים אותו טיפוס פעמיים.
+
+## ESLint + Prettier
+
+- כל קוד חייב לעבור `npm run lint` ללא שגיאות.
+- לא מבצעים commit אם יש אזהרות lint פתוחות.
+
+## Schema Validation עם Zod
+
+כל I/O (קלט API, פרמטרי URL, נתוני DB) עובר ולידציה עם Zod.
+
+```typescript
+// ❌ BAD
+const { id } = req.params;
+
+// ✅ GOOD
+const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+```
+
+## טיפול בשגיאות
+
+השתמש ב-Result types או ב-exception hierarchy ברורה. אל תבלע שגיאות בשתיקה.
+
+```typescript
+// ❌ BAD
+try { await save(); } catch (e) {}
+
+// ✅ GOOD
+try {
+  await save();
+} catch (e) {
+  logger.error('Save failed', { error: e });
+  throw new DatabaseError('Failed to persist record', { cause: e });
+}
+```

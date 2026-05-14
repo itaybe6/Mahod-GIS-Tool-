@@ -1,0 +1,123 @@
+/* RTL-specific overrides.
+ * The base Tailwind RTL plugin (tailwindcss-rtl) handles most logical-property mirroring,
+ * but Leaflet and a few imported widgets need explicit overrides.
+ */
+
+/* Leaflet dark + RTL overrides */
+.leaflet-container {
+  background: #050810 !important;
+  outline: none;
+  direction: ltr; /* the map itself should remain LTR */
+}
+
+.leaflet-control-zoom {
+  border: 1px solid #1f2937 !important;
+  background: #0d1117 !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-control-zoom a {
+  background: #0d1117 !important;
+  color: #9ca3af !important;
+  border-bottom: 1px solid #1f2937 !important;
+  transition: all 0.15s;
+}
+.leaflet-control-zoom a:hover {
+  background: #0e1c2e !important;
+  color: #2eaa6f !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(13, 17, 23, 0.85) !important;
+  color: #6b7280 !important;
+  font-size: 10px !important;
+  backdrop-filter: blur(8px);
+}
+.leaflet-control-attribution a {
+  color: #9ca3af !important;
+}
+
+.leaflet-control-scale-line {
+  background: rgba(13, 17, 23, 0.7) !important;
+  color: #9ca3af !important;
+  border-color: #1f2937 !important;
+  backdrop-filter: blur(8px);
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(13, 17, 23, 0.92) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid #1f2937 !important;
+  color: #f9fafb !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+.leaflet-popup-content {
+  color: #f9fafb !important;
+  font-family: 'Rubik', sans-serif !important;
+  font-size: 12px !important;
+  margin: 10px 14px !important;
+  direction: rtl;
+}
+.leaflet-popup-tip {
+  background: rgba(13, 17, 23, 0.92) !important;
+}
+.leaflet-popup-content strong {
+  color: #1a6fb5;
+}
+
+/* Mapbox GL popups (3D view).
+ * Without these the popup uses Mapbox's default white background while the
+ * text inherits `#f9fafb` from <body>, producing the white-on-white bug.
+ * We mirror the Leaflet popup styling for visual consistency between the
+ * 2D (Leaflet) and 3D (Mapbox) maps.
+ */
+.mapboxgl-popup-content {
+  background: rgba(13, 17, 23, 0.92) !important;
+  color: #f9fafb !important;
+  border: 1px solid #1f2937 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px);
+  font-family: 'Rubik', sans-serif !important;
+  font-size: 12px !important;
+  padding: 10px 14px !important;
+  direction: rtl;
+}
+.mapboxgl-popup-content strong {
+  color: #1a6fb5;
+}
+.mapboxgl-popup-close-button {
+  color: #9ca3af !important;
+  font-size: 18px !important;
+  padding: 0 6px !important;
+  background: transparent !important;
+}
+.mapboxgl-popup-close-button:hover {
+  color: #f9fafb !important;
+  background: transparent !important;
+}
+/* Tip color must match the popup background per side, otherwise you get
+ * a white triangle attached to a dark balloon. */
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+  border-bottom-color: rgba(13, 17, 23, 0.92) !important;
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+  border-top-color: rgba(13, 17, 23, 0.92) !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: rgba(13, 17, 23, 0.92) !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: rgba(13, 17, 23, 0.92) !important;
+}

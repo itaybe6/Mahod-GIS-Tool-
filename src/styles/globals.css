@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg-1 font-sans text-text antialiased;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-teal;
+  }
+}
+
+@layer components {
+  .top-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #1a6fb5, #2eaa6f, transparent);
+    background-size: 200% 100%;
+    @apply animate-loader;
+    z-index: 1000;
+    opacity: 0.85;
+  }
+
+  .status-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .status-dot.green {
+    @apply bg-success;
+    box-shadow: 0 0 8px #2eaa6f;
+  }
+  .status-dot.green::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid #2eaa6f;
+    opacity: 0.4;
+    @apply animate-pulse-dot;
+  }
+  .status-dot.yellow {
+    @apply bg-warning;
+    box-shadow: 0 0 8px #f59e0b;
+  }
+  .status-dot.red {
+    @apply bg-danger;
+    box-shadow: 0 0 8px #ef4444;
+  }
+
+  .marker-glow {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    position: relative;
+  }
+  .marker-glow::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    opacity: 0.45;
+    @apply animate-marker-pulse;
+  }
+  .marker-red {
+    background: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+  }
+  .marker-emerald {
+    background: #2eaa6f;
+    color: #2eaa6f;
+    box-shadow: 0 0 10px #2eaa6f;
+  }
+  .marker-amber {
+    background: #f59e0b;
+    color: #f59e0b;
+    box-shadow: 0 0 10px #f59e0b;
+  }
+  .marker-purple {
+    background: #8b5cf6;
+    color: #8b5cf6;
+    box-shadow: 0 0 10px #8b5cf6;
+  }
+}
