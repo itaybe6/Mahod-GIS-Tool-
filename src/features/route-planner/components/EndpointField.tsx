@@ -1,5 +1,6 @@
 import { MousePointerClick, MapPin, Flag, X } from 'lucide-react';
 import { MapboxGeocodeAutocomplete } from '@/components/map/MapboxGeocodeAutocomplete';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   useRoutePlannerStore,
@@ -102,6 +103,7 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
         variant="full"
         placeholder={meta.placeholder}
         onPick={handlePick}
+        includeGtfsStops={isSupabaseConfigured}
       />
 
       {value && (

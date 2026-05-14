@@ -150,4 +150,9 @@
     color: #8b5cf6;
     box-shadow: 0 0 10px #8b5cf6;
   }
+
+  /* Geoman default toolbar is redundant with the in-app draw toggle — keep it hidden. */
+  .leaflet-pm-toolbar {
+    display: none !important;
+  }
 }

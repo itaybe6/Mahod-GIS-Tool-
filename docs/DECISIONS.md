@@ -68,16 +68,19 @@ Leaflet, שמשמש כמנוע המפה הראשי (DARK / OSM / SAT / TOPO), ל
 
 - **בחירת A/B דו-מצבית**: או דרך Mapbox Geocoding (אותו `MapboxGeocodeAutocomplete` שכבר משמש את שורת החיפוש), או דרך לחיצה ישירה על המפה במצב picking ייעודי שמשנה את הסמן ל-crosshair ומציג באנר באמצע למעלה. בלי לפתוח דיאלוגים נפרדים.
 
-### תלויות נתונים שצריך לדעת
+### תלויות נתונים — ולמה ויתרנו על stop_times.txt לחלוטין
 
-ה-RPC עובדת ברגע שהמיגרציה רצה, אבל היא **מחזירה 0 אופציות עד ש-`gtfs_stop_route` ו-`gtfs_shapes` מאוכלסים** (נכון ל-seed הנוכחי `gtfs_stop_route=0` ו-`gtfs_shapes=0` בעוד `gtfs_stops≈35K`, `gtfs_routes≈7.8K`, `gtfs_trips≈435K`). ההפעלה היא:
+הבעיה: ל-Mahod GIS אין את `stop_times.txt` ב-Supabase, ואין `DATABASE_URL` ב-`.env` (יש רק `SUPABASE_SERVICE_ROLE_KEY`). ה-seed המקורי `seed:stop-route` תלוי בשניהם. במקום להריץ אותו, אנחנו בונים את `gtfs_stop_route` בגישה אחרת — קירוב מרחבי על בסיס `gtfs_shapes`. שלושה שלבים שכולם רצים על Supabase Cloud (אין עיבוד מקומי כבד פרט ל-streaming של `shapes.txt`):
 
-```bash
-npm run seed:shapes
-npm run seed:stop-route
-```
+1. **`seed:shapes:rest`** — סקריפט TS חדש (`scripts/seed/seed-shapes-rest.ts`) שזורם את `shapes.txt` (218MB raw, 7.1M נקודות) ושולח אותו ל-Supabase דרך REST + service-role, בלי `DATABASE_URL`. הצבירה ל-LineString נעשית בשרת דרך ה-RPC `upsert_gtfs_shapes_bulk(jsonb)`. ברירת מחדל `MAX_SHAPES=30000`, וכל ריצה חוזרת מדלגת על shape_ids שכבר קיימים (idempotent). מסתבר שב-GTFS ישראל יש בסה"כ **רק 6,817 shape_id ייחודיים** ב-`gtfs_trips` — לא 50K כפי שמתואר בחלק העליון של המסמך — אז אפילו 30K הוא הרבה יותר מספיק.
 
-בלעדיהם ה-UI יציג "לא נמצא מסלול תח"צ ישיר" — וזה התנהגות נכונה ולא באג של ה-RPC.
+2. **`populate_stop_route_from_shapes(buffer_meters, route_offset, route_limit)`** — RPC ב-PostgreSQL שעוברת על כל `(route_id, direction_id)` בעולם הקווים, בוחרת shape יציג אחד מ-`gtfs_trips`, ומחפשת את כל ה-stops בתוך `buffer_meters` (ברירת מחדל 30 מ׳) מ-LineString של ה-shape. שימוש ב-`ST_DWithin(geom, geom, buffer_degrees)` עם המרת מטרים למעלות (~110000.0 לק"מ) מנצל את GIST index, ו-`ST_Distance(geography)` עוטף לבדיקת דיוק. ה-RPC מדפדפת ב-batches של 300 ראש קו, כדי שלא נחצה את `statement_timeout` של service_role.
+
+3. ה-RPC הראשית `plan_transit_route` משתמשת ב-`gtfs_stop_route` שנבנה ככה בלי לדעת את ההבדל — היא לא יודעת ולא אכפת לה אם הקישורים הגיעו מ-`stop_times.txt` או מ-spatial proximity. ב-`source_version` של כל שורה מצוין `spatial-30m` כדי שאפשר יהיה להבדיל בעתיד אם ירוץ seed אמיתי.
+
+**הדיוק בפועל**: בריצה הראשונה התקבלו ~531K קישורים בכיסוי של 6,266 קווים (80% מהקווים בארץ) ו-32,448 תחנות (93% מהתחנות). מבחן ידני על ת"א מרכז → כיכר המדינה החזיר 10 אפשרויות עם קווים מציאותיים (3, 149, 89, 40, 601, 606, 650, 852). False positives קיימים — תחנת קו 5 ליד נתיב של קו 18 עלולה להיכלל גם בקו 18 — אבל הבדיקה השנייה ב-`plan_transit_route` (השוואת `ST_LineLocatePoint` של from וto) מסננת רוב המקרים אוטומטית.
+
+**המגבלה הידועה**: ללא `stop_times.txt` אין לנו מידע על תדירות, שעות פעילות, או פערים בקווי לילה. ה-UI מצהיר על זה במפורש בכרטיס התוצאות ("ללוחות זמנים ממש (stop_times) נדרש seed מלא").
 
 ## ספירות תנועה — העלאה מ־2025 בלבד
 

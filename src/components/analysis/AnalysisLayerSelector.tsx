@@ -8,7 +8,6 @@ import {
 interface LayerEntry {
   key: AnalysisLayerKey;
   title: string;
-  description: string;
   icon: typeof Bus;
 }
 
@@ -16,32 +15,26 @@ const LAYERS: LayerEntry[] = [
   {
     key: 'transit',
     title: 'תחבורה ציבורית',
-    description: 'תחנות אוטובוס, רכבת ורק"ל בתוך האזור',
     icon: Bus,
   },
   {
     key: 'accidents',
     title: 'תאונות דרכים',
-    description:
-      'נקודה אדומה לכל אזור TAZ (אגרגט CBS) ביישובים שחותכים את הפוליגון — מיקום משוער סביב מרכז היישוב',
     icon: AlertOctagon,
   },
   {
     key: 'roads',
     title: 'דרכים ורשויות תמרור',
-    description: 'מקטעי כביש שחותכים את האזור',
     icon: Route,
   },
   {
     key: 'infrastructure',
     title: 'תשתיות',
-    description: 'רכבת ישראל + תוואי מטרו ורק"ל',
     icon: Train,
   },
   {
     key: 'traffic',
     title: 'ספירות תנועה',
-    description: 'תחנות ספירה + פילוח נפח לפי סוג רכב ושעה',
     icon: Gauge,
   },
 ];
@@ -72,7 +65,7 @@ export function AnalysisLayerSelector({
           <label
             key={layer.key}
             className={cn(
-              'group flex cursor-pointer items-start gap-2.5 rounded-md border px-2.5 py-2 transition-all',
+              'group flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition-all',
               checked
                 ? 'border-brand-teal/60 bg-brand-teal/10'
                 : 'border-border bg-bg-1 hover:border-brand-teal/40',
@@ -84,21 +77,18 @@ export function AnalysisLayerSelector({
               checked={checked}
               disabled={disabled}
               onChange={() => toggleLayer(layer.key)}
-              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-brand-teal disabled:cursor-not-allowed"
+              className="h-4 w-4 shrink-0 cursor-pointer accent-brand-teal disabled:cursor-not-allowed"
               aria-label={layer.title}
             />
             <Icon
               size={16}
               className={cn(
-                'mt-0.5 shrink-0 transition-colors',
+                'shrink-0 transition-colors',
                 checked ? 'text-brand-teal' : 'text-text-faint'
               )}
             />
-            <div className="min-w-0 flex-1">
-              <div className="text-[12.5px] font-medium text-text">{layer.title}</div>
-              <div className="text-[11px] leading-snug text-text-dim">
-                {layer.description}
-              </div>
+            <div className="min-w-0 flex-1 text-[12.5px] font-medium text-text">
+              {layer.title}
             </div>
           </label>
         );

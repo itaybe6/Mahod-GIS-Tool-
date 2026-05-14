@@ -4,10 +4,11 @@ import { useUploadStore } from '@/stores/uploadStore';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dropzone } from '@/components/upload/Dropzone';
 import { UploadStatus } from '@/components/upload/UploadStatus';
+import { InputModeToggle } from '@/components/upload/InputModeToggle';
+import { DrawHelper } from '@/components/upload/DrawHelper';
 import { AnalysisLayerSelector } from '@/components/analysis/AnalysisLayerSelector';
 import { AnalyzeButton } from '@/components/analysis/AnalyzeButton';
 import { LayersCard } from '@/components/data/LayerRow';
-import { ResultsCard } from '@/components/data/ResultRow';
 import { ExportPanel } from '@/features/export/ExportPanel';
 
 export interface RightPanelProps {
@@ -31,6 +32,7 @@ export function RightPanel({ children }: RightPanelProps): JSX.Element {
 function DefaultRightPanel(): JSX.Element {
   const hasPolygon = useUploadStore((s) => s.polygon !== null);
   const uploadStatus = useUploadStore((s) => s.status);
+  const inputMode = useUploadStore((s) => s.inputMode);
 
   return (
     <>
@@ -46,7 +48,8 @@ function DefaultRightPanel(): JSX.Element {
             <HelpCircle size={14} />
           </button>
         </CardHeader>
-        {uploadStatus === 'idle' ? <Dropzone /> : <UploadStatus />}
+        <InputModeToggle />
+        {renderStep1Body(inputMode, uploadStatus)}
       </Card>
 
       <Card>
@@ -60,8 +63,29 @@ function DefaultRightPanel(): JSX.Element {
       </Card>
 
       <LayersCard />
-      <ResultsCard />
       <ExportPanel />
     </>
   );
+}
+
+/**
+ * The body of the "שלב 1" card depends on both the chosen input mode and the
+ * current upload pipeline status — drawn polygons and uploaded ones share the
+ * same `status` machine but expose different inline controls.
+ */
+function renderStep1Body(
+  inputMode: ReturnType<typeof useUploadStore.getState>['inputMode'],
+  status: ReturnType<typeof useUploadStore.getState>['status']
+): JSX.Element {
+  if (inputMode === 'draw') {
+    return (
+      <div className="flex flex-col gap-2">
+        <DrawHelper />
+        {status === 'ready' && <UploadStatus />}
+      </div>
+    );
+  }
+
+  if (status === 'idle') return <Dropzone />;
+  return <UploadStatus />;
 }

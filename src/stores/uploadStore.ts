@@ -4,6 +4,16 @@ import type { IsraeliGrid } from '@/lib/gis/projections';
 
 export type UploadStatus = 'idle' | 'parsing' | 'ready' | 'error';
 
+/**
+ * Whether the user is feeding the polygon via file upload or by drawing it
+ * directly on the map. The map controller listens to this to enable / disable
+ * Geoman's draw + edit handlers.
+ */
+export type PolygonInputMode = 'upload' | 'draw';
+
+/** Sub-state of the draw flow: idle → drawing (mid-click) → editing (after close). */
+export type DrawingPhase = 'idle' | 'drawing' | 'editing';
+
 /** One municipality returned by `find_municipalities_for_polygon`. */
 export interface MunicipalityHit {
   semel_yishuv: number | null;
@@ -40,6 +50,11 @@ export interface UploadState {
   municipalities: MunicipalityHit[] | null;
   municipalitiesError: string | null;
 
+  /** Whether the right-rail card is currently driving an upload or a draw flow. */
+  inputMode: PolygonInputMode;
+  /** Sub-state of the draw flow used to swap the in-map hint UI. */
+  drawingPhase: DrawingPhase;
+
   setParsing: (sourceName: string) => void;
   setPolygon: (payload: {
     polygon: FeatureCollection;
@@ -52,6 +67,8 @@ export interface UploadState {
   setMunicipalitiesLoading: () => void;
   setMunicipalities: (hits: MunicipalityHit[]) => void;
   setMunicipalitiesError: (message: string) => void;
+  setInputMode: (mode: PolygonInputMode) => void;
+  setDrawingPhase: (phase: DrawingPhase) => void;
   clear: () => void;
 }
 
@@ -66,6 +83,8 @@ export const useUploadStore = create<UploadState>((set) => ({
   municipalitiesStatus: 'idle',
   municipalities: null,
   municipalitiesError: null,
+  inputMode: 'upload',
+  drawingPhase: 'idle',
 
   setParsing: (sourceName) =>
     set({
@@ -109,8 +128,10 @@ export const useUploadStore = create<UploadState>((set) => ({
       municipalities: null,
       municipalitiesError: message,
     }),
+  setInputMode: (mode) => set({ inputMode: mode }),
+  setDrawingPhase: (phase) => set({ drawingPhase: phase }),
   clear: () =>
-    set({
+    set((state) => ({
       status: 'idle',
       polygon: null,
       bbox: null,
@@ -121,5 +142,9 @@ export const useUploadStore = create<UploadState>((set) => ({
       municipalitiesStatus: 'idle',
       municipalities: null,
       municipalitiesError: null,
-    }),
+      // Keep the user's currently chosen input mode so they don't have to
+      // re-toggle "draw" after deleting a polygon they wanted to redo.
+      inputMode: state.inputMode,
+      drawingPhase: 'idle',
+    })),
 }));

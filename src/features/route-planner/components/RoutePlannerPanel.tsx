@@ -155,19 +155,22 @@ export function RoutePlannerPanel(): JSX.Element {
           </p>
         )}
         {status === 'ready' && options.length > 0 && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2.5">
             {options.map((opt, i) => (
               <RouteOptionRow key={`${opt.route_id}-${opt.direction_id}`} option={opt} index={i} />
             ))}
             <p
               className={cn(
-                'mt-1 flex items-start gap-1.5 rounded border border-border/60 bg-bg-1 px-2 py-1.5',
-                'text-[10.5px] leading-snug text-text-faint'
+                'mt-0.5 flex items-start gap-2 rounded-lg border border-border/60 bg-bg-1 px-3 py-2.5',
+                'text-[12px] leading-relaxed text-text-dim'
               )}
             >
-              <Info size={10} className="mt-px shrink-0" />
-              חישוב ההערכה: הליכה 1.4 מ׳/ש׳, אוטובוס ≈ 22 קמ"ש, רכבת/רק"ל ≈ 50 קמ"ש. ללוחות זמנים
-              ממש (stop_times) נדרש seed מלא.
+              <Info size={14} className="mt-0.5 shrink-0 text-text-faint" aria-hidden />
+              <span>
+                חישוב זמן משוער: הליכה ~1.4 מ׳/ש׳, אוטובוס ~22 קמ״ש, רכבת/רק״ל ~50 קמ״ש. ללוחות זמנים אמיתיים
+                נדרש <code className="rounded bg-bg-2 px-1 font-mono text-[11px]">stop_times</code> במסד. הסבר על בדיקות
+                ומגבלות נתונים נמצא בקובץ README של תכנון המסלול במאגר.
+              </span>
             </p>
           </div>
         )}

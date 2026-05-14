@@ -13,6 +13,7 @@ import {
   fetchMapboxGeocodeAutocomplete,
   type GeocodeFeatureNormalized,
 } from '@/lib/mapbox/geocoding';
+import { fetchGtfsStopSuggestions } from '@/lib/gtfs/stopSuggestions';
 
 export type GeocodeFieldVariant = 'city' | 'address' | 'place' | 'full';
 
@@ -27,6 +28,8 @@ const VARIANT_TYPES: Record<GeocodeFieldVariant, string> = {
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_CHARS = 2;
 const SUGGESTION_LIMIT = 8;
+/** When true, merge GTFS stop name matches (Supabase) so rail/bus stop names autocomplete. */
+const GTFS_STOP_LIMIT = 6;
 
 export interface MapboxGeocodeAutocompleteProps {
   variant: GeocodeFieldVariant;
@@ -39,6 +42,12 @@ export interface MapboxGeocodeAutocompleteProps {
   onPick: (feature: GeocodeFeatureNormalized) => void;
   /** Fires on every keystroke — use to combine address search with a typed city line. */
   onInputChange?: (value: string) => void;
+  /**
+   * When true, also queries `gtfs_stops` (Supabase) by `stop_name` and prepends those
+   * suggestions. Mapbox Geocoding v5 no longer returns many POIs (e.g. rail stations);
+   * this keeps Hebrew station names working in the route planner.
+   */
+  includeGtfsStops?: boolean;
 }
 
 export function MapboxGeocodeAutocomplete({
@@ -49,6 +58,7 @@ export function MapboxGeocodeAutocomplete({
   className,
   onPick,
   onInputChange,
+  includeGtfsStops = false,
 }: MapboxGeocodeAutocompleteProps): JSX.Element {
   const listId = useId();
   const [value, setValue] = useState('');
@@ -75,7 +85,16 @@ export function MapboxGeocodeAutocomplete({
     let active = true;
     const q = value.trim();
 
-    if (!token || q.length < MIN_QUERY_CHARS) {
+    if (q.length < MIN_QUERY_CHARS) {
+      setSuggestions([]);
+      setLoading(false);
+      setActiveIndex(-1);
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!token && !includeGtfsStops) {
       setSuggestions([]);
       setLoading(false);
       setActiveIndex(-1);
@@ -96,17 +115,43 @@ export function MapboxGeocodeAutocomplete({
     setLoading(true);
     const timer = window.setTimeout(() => {
       void (async () => {
-        const results = await fetchMapboxGeocodeAutocomplete({
-          query: built,
-          types: VARIANT_TYPES[variant],
-          limit: SUGGESTION_LIMIT,
-          bbox: ISRAEL_REGION_BBOX,
-          proximity: DEFAULT_PROXIMITY,
-          fuzzyMatch: true,
-          accessToken: token,
-        });
+        const mapboxPromise =
+          token != null && token !== ''
+            ? fetchMapboxGeocodeAutocomplete({
+                query: built,
+                types: VARIANT_TYPES[variant],
+                limit: SUGGESTION_LIMIT,
+                bbox: ISRAEL_REGION_BBOX,
+                proximity: DEFAULT_PROXIMITY,
+                fuzzyMatch: true,
+                accessToken: token,
+              })
+            : Promise.resolve([] as GeocodeFeatureNormalized[]);
+        const gtfsPromise = includeGtfsStops
+          ? fetchGtfsStopSuggestions(built, GTFS_STOP_LIMIT)
+          : Promise.resolve([] as GeocodeFeatureNormalized[]);
+
+        const [mapboxResults, gtfsResults] = await Promise.all([mapboxPromise, gtfsPromise]);
+
         if (!active) return;
-        setSuggestions(results);
+
+        const seen = new Set<string>();
+        const merged: GeocodeFeatureNormalized[] = [];
+        for (const f of gtfsResults) {
+          const key = `${f.center[0].toFixed(5)},${f.center[1].toFixed(5)}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          merged.push(f);
+        }
+        for (const f of mapboxResults) {
+          const key = `${f.center[0].toFixed(5)},${f.center[1].toFixed(5)}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          merged.push(f);
+          if (merged.length >= SUGGESTION_LIMIT + GTFS_STOP_LIMIT) break;
+        }
+
+        setSuggestions(merged.slice(0, SUGGESTION_LIMIT + GTFS_STOP_LIMIT));
         setLoading(false);
         setActiveIndex(-1);
       })();
@@ -116,7 +161,7 @@ export function MapboxGeocodeAutocomplete({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [value, token, variant, buildQuery]);
+  }, [value, token, variant, buildQuery, includeGtfsStops]);
 
   const pick = useCallback(
     (f: GeocodeFeatureNormalized) => {
@@ -200,7 +245,7 @@ export function MapboxGeocodeAutocomplete({
           spellCheck={false}
           value={value}
           placeholder={placeholder}
-          disabled={!token}
+          disabled={!token && !includeGtfsStops}
           onChange={(e) => {
             const next = e.target.value;
             setValue(next);
@@ -243,7 +288,9 @@ export function MapboxGeocodeAutocomplete({
             ))}
           </ul>
         )}
-        {loading && token && value.trim().length >= MIN_QUERY_CHARS && (
+        {loading &&
+          (Boolean(token) || includeGtfsStops) &&
+          value.trim().length >= MIN_QUERY_CHARS && (
           <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-text-faint">
             …
           </span>

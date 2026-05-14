@@ -23,6 +23,16 @@ export function UploadedPolygonLayer(): JSX.Element | null {
   const map = useMap();
   const polygon = useUploadStore((s) => s.polygon);
   const bbox = useUploadStore((s) => s.bbox);
+  // Polygons authored via the in-map draw flow are tagged with
+  // `properties.source === 'draw'` and owned by the geoman layer
+  // (`PolygonDrawController`). Rendering them here too would stack two
+  // identical fills on the map and create a duplicate popup target.
+  const isDrawn = useMemo(() => {
+    if (!polygon) return false;
+    return polygon.features.some(
+      (f) => (f.properties as { source?: string } | null)?.source === 'draw'
+    );
+  }, [polygon]);
 
   // Re-mount the GeoJSON child whenever the data identity changes so that
   // Leaflet rebuilds its internal layers (no stale features sticking around).
@@ -52,6 +62,7 @@ export function UploadedPolygonLayer(): JSX.Element | null {
   }, [polygon, bbox, dataKey, map]);
 
   if (!polygon) return null;
+  if (isDrawn) return null;
 
   return (
     <GeoJSON

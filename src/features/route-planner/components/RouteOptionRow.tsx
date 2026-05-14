@@ -49,69 +49,81 @@ export function RouteOptionRow({ option, index }: RouteOptionRowProps): JSX.Elem
       onClick={() => selectOption(id)}
       aria-pressed={isActive}
       className={cn(
-        'group flex w-full flex-col gap-1.5 rounded-lg border bg-bg-1 px-2.5 py-2 text-start transition-colors',
+        'group flex w-full flex-col gap-2.5 rounded-xl border bg-bg-1 px-4 py-3.5 text-start transition-colors',
         isActive
-          ? 'border-brand-teal/60 bg-brand-teal/5 shadow-[0_0_0_1px_rgba(76,175,80,0.25)_inset]'
-          : 'border-border/70 hover:border-brand-teal/30 hover:bg-bg-2'
+          ? 'border-brand-teal/70 bg-brand-teal/[0.08] shadow-[0_0_0_2px_rgba(76,175,80,0.28)_inset]'
+          : 'border-border/80 hover:border-brand-teal/40 hover:bg-bg-2'
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         <span
           className={cn(
-            'grid h-5 w-5 place-items-center rounded text-[10px] font-bold',
-            'bg-brand-teal/15 text-brand-teal'
+            'grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[13px] font-bold',
+            'bg-brand-teal/20 text-brand-teal ring-1 ring-brand-teal/25'
           )}
           aria-hidden
         >
           {index + 1}
         </span>
         <span
-          className="inline-flex h-6 items-center gap-1 rounded-md bg-gradient-to-br from-brand-teal to-brand-teal2 px-2 font-mono text-[12px] font-bold text-white shadow-[0_2px_8px_rgba(76,175,80,0.3)]"
+          className="inline-flex h-9 min-w-[2.75rem] items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-brand-teal to-brand-teal2 px-3 font-mono text-[15px] font-bold text-white shadow-[0_3px_12px_rgba(76,175,80,0.35)]"
           title={`קו ${option.route_id}`}
         >
-          <Icon size={12} />
+          <Icon size={16} className="opacity-95" />
           {routeBadge}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[11.5px] text-text" title={longName ?? ''}>
-          {longName ?? routeTypeHebrew(option.route_type)}
-        </span>
-        <span className="rounded-full border border-border/70 bg-surface px-1.5 py-0.5 text-[10px] text-text-faint">
-          {formatDirection(option.direction_id)}
+        <span
+          className="ms-auto inline-flex shrink-0 items-center rounded-full border border-border/80 bg-surface px-2.5 py-1 text-[12px] font-medium text-text-dim"
+          title="זמן משוער כולל"
+        >
+          ≈{' '}
+          <span className="mx-0.5 font-mono text-[15px] font-semibold text-text">{totalMin}</span>
+          דק׳
         </span>
       </div>
 
-      <div className="flex flex-col gap-0.5 ps-7 text-[11px] text-text-dim">
-        <div className="flex items-center gap-1.5">
-          <Footprints size={10} className="shrink-0 text-emerald-300/80" />
+      <p className="text-[13px] font-medium leading-snug text-text" title={longName ?? ''}>
+        {longName ?? routeTypeHebrew(option.route_type)}
+      </p>
+      <p className="text-[12px] text-text-faint">
+        כיוון: <span className="font-medium text-text-dim">{formatDirection(option.direction_id)}</span>
+      </p>
+
+      <div className="flex flex-col gap-1.5 border-t border-border/50 pt-2.5 ps-1 text-[13px] leading-relaxed text-text-dim">
+        <div className="flex items-start gap-2">
+          <Footprints size={15} className="mt-0.5 shrink-0 text-emerald-300" aria-hidden />
           <span>
-            הליכה לתחנה <span className="text-text">{option.from_stop.stop_name}</span> ·{' '}
-            <span className="font-mono">{formatMeters(option.walk_to_stop_m)}</span>
+            הליכה לתחנה <span className="font-medium text-text">{option.from_stop.stop_name}</span>
+            <span className="mx-1 text-text-faint">·</span>
+            <span className="font-mono text-[13px] text-text">{formatMeters(option.walk_to_stop_m)}</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Icon size={10} className="shrink-0 text-brand-teal" />
+        <div className="flex items-start gap-2">
+          <Icon size={15} className="mt-0.5 shrink-0 text-brand-teal" aria-hidden />
           <span>
-            נסיעה ל-<span className="text-text">{option.to_stop.stop_name}</span> ·{' '}
-            <span className="font-mono">{formatMeters(option.transit_distance_m)}</span>
+            נסיעה ל־<span className="font-medium text-text">{option.to_stop.stop_name}</span>
+            <span className="mx-1 text-text-faint">·</span>
+            <span className="font-mono text-[13px] text-text">{formatMeters(option.transit_distance_m)}</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Footprints size={10} className="shrink-0 text-rose-300/80" />
+        <div className="flex items-start gap-2">
+          <Footprints size={15} className="mt-0.5 shrink-0 text-rose-300" aria-hidden />
           <span>
-            הליכה ליעד · <span className="font-mono">{formatMeters(option.walk_from_stop_m)}</span>
+            הליכה ליעד
+            <span className="mx-1 text-text-faint">·</span>
+            <span className="font-mono text-[13px] text-text">{formatMeters(option.walk_from_stop_m)}</span>
           </span>
         </div>
       </div>
 
-      <div className="ms-7 flex items-center gap-3 border-t border-border/40 pt-1 font-mono text-[10.5px] text-text-faint">
-        <span title="זמן משוער כולל הליכה ונסיעה">
-          ≈ <span className="text-text">{totalMin}</span> דק׳
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/50 pt-2.5 font-mono text-[12px] text-text-faint">
+        <span>
+          סה״כ הליכה:{' '}
+          <span className="text-[13px] font-semibold text-text">{formatMeters(option.total_walk_m)}</span>
         </span>
         <span>
-          הליכה: <span className="text-text">{formatMeters(option.total_walk_m)}</span>
-        </span>
-        <span>
-          נסיעה: <span className="text-text">{formatMeters(option.transit_distance_m)}</span>
+          אורך נסיעה:{' '}
+          <span className="text-[13px] font-semibold text-text">{formatMeters(option.transit_distance_m)}</span>
         </span>
       </div>
     </button>

@@ -19,7 +19,7 @@ export function TablePicker({
   isLoadingCounts,
 }: TablePickerProps): JSX.Element {
   return (
-    <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="grid shrink-0 grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(200px,1fr))] 2xl:gap-3">
       {tables.map((config) => (
         <TablePickerItem
           key={config.name}
@@ -58,7 +58,7 @@ function TablePickerItem({
       title={config.description}
       aria-pressed={active}
       className={cn(
-        'group relative flex min-h-[112px] animate-fadein flex-col items-start gap-2.5 overflow-hidden rounded-lg border bg-surface p-4 text-start transition-all',
+        'group relative flex min-h-[132px] w-full animate-fadein flex-col items-start gap-3 overflow-hidden rounded-xl border bg-surface p-5 text-start transition-all sm:min-h-[140px]',
         active
           ? 'border-brand-teal/50 bg-brand-teal/5 shadow-[0_0_0_1px_rgba(46,170,111,0.4),0_10px_28px_rgba(46,170,111,0.14)]'
           : 'border-border hover:-translate-y-px hover:border-brand-teal/30'
@@ -74,20 +74,20 @@ function TablePickerItem({
       <div className="flex w-full items-center justify-between gap-2">
         <div
           className={cn(
-            'grid h-9 w-9 place-items-center rounded-md transition-colors',
+            'grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-colors',
             active
               ? 'bg-brand-teal/15 text-brand-teal'
               : 'bg-bg-1 text-text-dim group-hover:text-brand-teal'
           )}
         >
-          <Icon size={18} />
+          <Icon size={20} />
         </div>
         {isLoadingCount && count == null ? (
           <span className="block h-4 w-12 animate-pulse rounded bg-white/[0.05]" />
         ) : (
           <span
             className={cn(
-              'rounded-full border px-2 py-0.5 font-mono text-[11.5px]',
+              'rounded-full border px-2.5 py-0.5 font-mono text-[12px]',
               active
                 ? 'border-brand-teal/40 bg-brand-teal/10 text-brand-teal'
                 : 'border-border bg-bg-1 text-text-dim'
@@ -99,12 +99,12 @@ function TablePickerItem({
         )}
       </div>
 
-      <div className="min-w-0">
-        <div className="truncate text-[15px] font-semibold text-text">
+      <div className="min-w-0 flex-1">
+        <div className="text-[16px] font-semibold leading-tight text-text sm:text-[17px]">
           {config.label}
         </div>
         {config.description && (
-          <div className="line-clamp-2 text-[12.5px] font-medium leading-snug text-text-dim/95">
+          <div className="mt-1 line-clamp-3 text-[13px] font-medium leading-relaxed text-text-dim/95 sm:text-[13.5px]">
             {config.description}
           </div>
         )}

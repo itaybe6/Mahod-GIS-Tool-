@@ -24,6 +24,8 @@ import { MapLegend } from './MapLegend';
 import { MapMunicipalityBadge } from './MapMunicipalityBadge';
 import { Mapbox3DView } from './Mapbox3DView';
 import { UploadedPolygonLayer } from './UploadedPolygonLayer';
+import { PolygonDrawController } from './PolygonDrawController';
+import { DrawModeOverlay } from './DrawModeOverlay';
 import { AnalysisResultsLayer } from './AnalysisResultsLayer';
 import { gtfsStopRowsToTransitStops } from '@/features/gtfs/gtfsStopMapUtils';
 import { useGtfsStops } from '@/features/gtfs/useGtfsStops';
@@ -186,6 +188,7 @@ export function MapView({ className }: MapViewProps): JSX.Element {
           <MapFocusController />
           <LeafletGeocodeRestore />
           <UploadedPolygonLayer />
+          <PolygonDrawController />
 
           {activeLayers.accidents && (
             <LayerGroup>
@@ -297,6 +300,7 @@ export function MapView({ className }: MapViewProps): JSX.Element {
 
       <MapLegend dateRange="01.04.2025 — 10.05.2025" title="צפיפות תאונות — אזור גוש דן" />
       <MapMunicipalityBadge />
+      {!is3D && <DrawModeOverlay />}
     </div>
   );
 }

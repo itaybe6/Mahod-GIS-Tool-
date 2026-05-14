@@ -21,7 +21,7 @@ interface EdgeResponse {
  *   4. Stores results / partial errors in the store, and surfaces a toast.
  *
  * The hook is intentionally stateless; all state lives in the store so the
- * results card and the map layer can read independently.
+ * bottom KPI strip, map layer, and other UI can read independently.
  */
 export function useAreaAnalysis(): {
   analyze: () => Promise<void>;
