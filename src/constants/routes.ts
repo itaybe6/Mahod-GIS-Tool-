@@ -13,7 +13,6 @@ export const ROUTES = {
   INFRASTRUCTURE: '/infrastructure',
   SOURCES: '/sources',
   HISTORY: '/history',
-  EXPORT: '/export',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

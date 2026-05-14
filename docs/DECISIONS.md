@@ -89,3 +89,34 @@ Leaflet, שמשמש כמנוע המפה הראשי (DARK / OSM / SAT / TOPO), ל
 היישום בפועל נמצא ב-`scripts/seed/seed-traffic-counts.ts`: הסקריפט מסנן את `traffic_counts` לפי `VOLUME_SURVEY_YEAR = 2025`, ואז מעלה ל-`traffic_count_volumes` רק רשומות שה-`count_id` שלהן שייך לספירות של 2025. בנוסף קיימת תקרה קשיחה של `MAX_VOLUME_ROWS = 40_000`, כדי למנוע טעינה חוזרת של מיליוני רשומות בטעות.
 
 המשמעות למשתמשי המערכת: ניתוחים והשוואות של ספירות תנועה לפני 2025 לא יופיעו בנתונים שמגיעים מהמסד, עד שיוגדל משאב האחסון/השורות או שתיבחר אסטרטגיה אחרת כמו ארכיון חיצוני, טעינה לפי אזור, או טעינה לפי בקשה.
+
+## עמוד סטטיסטיקות (`/statistics`)
+
+- האפליקציה היא Vite + React Router; חוויית `/statistics` מיושמת בארכיטקטורה הקיימת ולא כעץ `app/` של Next.js App Router.
+- משיכת נתונים בצד הלקוח דרך לקוח Supabase בדפדפן ו-React Query; חישובים כבדים נשארים ב-SQL (views/RPC), לא ב-JavaScript.
+- נוספו `recharts` ו-`@tanstack/react-table` כי נדרשו בפרויקט ולא היו ב-`package.json`.
+- בטבלת `accidents` שורה משקפת אזור סטטיסטי; העתק והתוויות ב-UI נמנעים מלרמוז ששורה אחת = אירוע תאונה בודד.
+- אשכול מרחבי נטען בעצלנות ולא מחזיר שורות עד ש-`accidents.geom` מאוכלס; ה-UI מציג הודעה בעברית במקרה הזה.
+- תובנת אופנועים: לא ניתן לשייך ישירות מעורבות אופנועים לפציעות קשות מהעמודות האגרגטיביות הזמינות, ולכן המדד משווה את חלק האופנועים מכלול כלי רכב ידועים לחלק הפציעות הקשות מסך הפציעות.
+- מיגרציות SQL עם שמות הקבצים שנדרשו, והרשאות קריאה/ביצוע ל-`anon` ו-`authenticated` עקביות עם שאר הסכמה.
+
+## Output formats (Task 8)
+
+**Chosen:** GeoJSON, HTML, PDF — כולם דרך **Supabase Edge Function** `export-reports` (אין שירות Node נפרד ב-`backend/`).
+
+**Rationale:**
+
+- HTML is mandatory by spec (mission section 8 footer).
+- GeoJSON is nearly free thanks to PostGIS `ST_AsGeoJSON()` inside the existing `query_*_in_polygon` RPCs (the function merges per-layer FeatureCollections and tags `properties.layer`).
+- PDF must be downloadable in environments where **Puppeteer/Chromium cannot run** (Supabase Edge blocks browser automation). We therefore generate PDF with **`pdf-lib`** plus an embedded **Noto Sans Hebrew** font fetched at runtime; the HTML report remains the rich, print-styled artifact, while the PDF mirrors the same KPI tables and authority breakdown in a simpler vector layout.
+
+**Rejected alternatives:**
+
+- Shapefile: four-file format, encoding pain with Hebrew, weak TypeScript library support.
+- Excel: multi-sheet formatting is heavier work than the three chosen formats combined.
+- KML/KMZ: less standard than GeoJSON for tooling this project targets.
+- Puppeteer on Edge: fails at runtime (`PermissionDenied` / missing Chromium); would force a separate always-on Node host, which we are not adding for this iteration.
+
+**Client contract:** The browser calls `POST …/functions/v1/export-reports` with `{ format, polygon, layers, analysis? }`. `analysis` is a compact `ExportAnalysisPayload` built from `useAnalysisStore` + polygon metadata (`buildExportAnalysisPayload`, including `@turf/area` for polygon km²).
+
+**מיקום ב-UI:** אין פריט תפריט צדדי לייצוא ואין דף ייעודי; כרטיס הייצוא (`ExportPanel`) יושב בפאנל הימני **מתחת לכרטיס "שכבות מידע"**. נתיב ישן `/export` מפנה לדשבורד (`/`) לסימניות קיימות.

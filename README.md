@@ -104,12 +104,17 @@ WHERE sr.stop_id = 38831;
 
 ```
 mahod-gis/
+├── supabase/
+│   └── functions/
+│       ├── analyze-area/   # Polygon → spatial RPCs (GTFS / accidents / roads / …)
+│       └── export-reports/ # GeoJSON + HTML + PDF exports (Task 8)
 ├── public/                 # static assets served as-is (favicon, robots, etc.)
 ├── src/
 │   ├── app/                # App-level wiring: <App>, <Providers>, route table
 │   ├── components/         # Reusable, presentation-only components
 │   │   ├── ui/             # shadcn-style primitives (button, card, input, toggle)
 │   │   ├── layout/         # AppShell, Header, Sidebar, RightPanel
+│   │   ├── ExportButtons/  # GeoJSON / HTML / PDF download buttons
 │   │   ├── map/            # MapContainer (Leaflet), MapTypeSelector, LayerToggle, etc.
 │   │   ├── upload/         # Dropzone + quick-upload buttons
 │   │   ├── data/           # StatPill, LayerRow, ResultRow (used by RightPanel)
@@ -122,8 +127,9 @@ mahod-gis/
 │   │   ├── infrastructure/ # `/infrastructure`
 │   │   ├── sources/        # `/sources` — data sources overview
 │   │   ├── history/        # `/history` — update history
-│   │   └── export/         # `/export` + reusable ExportPanel card
+│   │   └── export/         # ExportPanel (right rail under “שכבות מידע”)
 │   ├── lib/                # External-library config
+│   │   ├── export/         # `buildExportPayload`, `fetchExportBlob` → `export-reports`
 │   │   ├── supabase/       # ⚠️ placeholder client + types + README
 │   │   ├── leaflet/        # tile-layer registry
 │   │   └── utils.ts        # cn() + small formatters
@@ -193,7 +199,7 @@ ESLint additionally bans `any` (`@typescript-eslint/no-explicit-any: error`).
 | `/infrastructure`  | `InfrastructurePage`  | Placeholder (coming soon)                |
 | `/sources`         | `SourcesPage`         | Live (static info on planned sources)    |
 | `/history`         | `UpdateHistoryPage`   | Placeholder                              |
-| `/export`          | `ExportPage`          | Live (UI only — pipeline not wired)      |
+| `/export`          | —                     | Redirects to `/` (ייצוא רק מפאנל ימני מתחת לשכבות מידע) |
 
 Unmatched routes redirect to `/`.
 
@@ -224,8 +230,22 @@ The `.env.example` already lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABA
 5. **Implement the upload pipeline**
    - File handler in `components/upload/Dropzone.tsx`.
    - Stream to Supabase Storage; trigger an Edge Function that parses GTFS / CSV into the relational tables.
-6. **Implement export**
-   - `useExportTrigger` currently logs. Wire to a server function returning a download URL.
+6. **Export**
+   - Edge Function `export-reports`: `POST /functions/v1/export-reports` עם `format` + פוליגון + שכבות; HTML/PDF משתמשים ב־payload סיכום מהניתוח (`buildExportAnalysisPayload`).
+
+---
+
+## Output formats
+
+| Format  | Use case                           | Transport |
+| ------- | ---------------------------------- | --------- |
+| GeoJSON | Import to QGIS / ArcGIS / Mapbox  | `POST /functions/v1/export-reports` עם `"format":"geojson"` |
+| HTML    | Branded RTL report in the browser | `POST …` עם `"format":"html"` + `analysis` |
+| PDF     | Print-oriented summary           | `POST …` עם `"format":"pdf"` + `analysis` (PDF דרך `pdf-lib` + Noto Hebrew ב-Edge; לא Puppeteer) |
+
+GeoJSON נבנה מאותם RPC של PostGIS כמו `analyze-area` (`query_*_in_polygon`), עם `properties.layer` לכל פיצ'ר. HTML ו-PDF משתמשים באותו מבנה נתוני סיכום מהקליינט; PDF אינו מריץ Chromium בשרת (לא נתמך ב-Edge), ולכן העיצוב ב-PDF פשוט יותר מה-HTML אך עם אותם KPI וטבלאות ליבה.
+
+פריסה: `supabase functions deploy export-reports` (וראו `supabase/functions/export-reports/README.md`).
 
 ---
 

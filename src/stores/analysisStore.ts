@@ -53,6 +53,8 @@ interface AnalysisState {
   error: string | null;
   /** Wall-clock duration of the most recent run, in ms. */
   durationMs: number | null;
+  /** ISO timestamp when the last successful analysis finished (for exports). */
+  lastAnalyzedAt: string | null;
 
   setSelection: (selection: AnalysisLayerSelection) => void;
   toggleLayer: (key: AnalysisLayerKey) => void;
@@ -76,16 +78,29 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   results: null,
   error: null,
   durationMs: null,
+  lastAnalyzedAt: null,
 
   setSelection: (selection) => set({ selection }),
   toggleLayer: (key) =>
     set((state) => ({ selection: { ...state.selection, [key]: !state.selection[key] } })),
-  beginRun: () => set({ status: 'running', error: null }),
+  beginRun: () => set({ status: 'running', error: null, lastAnalyzedAt: null }),
   setResults: (results, durationMs) =>
-    set({ status: 'ready', results, error: null, durationMs }),
+    set({
+      status: 'ready',
+      results,
+      error: null,
+      durationMs,
+      lastAnalyzedAt: new Date().toISOString(),
+    }),
   setError: (error) => set({ status: 'error', error }),
   clearResults: () =>
-    set({ status: 'idle', results: null, error: null, durationMs: null }),
+    set({
+      status: 'idle',
+      results: null,
+      error: null,
+      durationMs: null,
+      lastAnalyzedAt: null,
+    }),
 }));
 
 /** Helper for the analyze button — true if at least one layer is selected. */

@@ -10,7 +10,6 @@ import { RoutePlannerPanel } from '@/features/route-planner/components/RoutePlan
 import { InfrastructurePage } from '@/features/infrastructure/InfrastructurePage';
 import { SourcesPage } from '@/features/sources/SourcesPage';
 import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
-import { ExportPage } from '@/features/export/ExportPage';
 
 /**
  * Centralized route table.
@@ -86,14 +85,7 @@ export function AppRouter(): JSX.Element {
           </AppShell>
         }
       />
-      <Route
-        path={ROUTES.EXPORT}
-        element={
-          <AppShell>
-            <ExportPage />
-          </AppShell>
-        }
-      />
+      <Route path="/export" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
       <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
     </Routes>
   );

@@ -7,7 +7,6 @@ import {
   Building2,
   Database,
   History,
-  Download,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES, type RoutePath } from '@/constants/routes';
@@ -42,7 +41,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: ROUTES.SOURCES, label: 'מקורות מידע', icon: Database },
       { to: ROUTES.HISTORY, label: 'היסטוריית עדכונים', icon: History },
-      { to: ROUTES.EXPORT, label: 'ייצוא דוחות', icon: Download },
     ],
   },
 ];

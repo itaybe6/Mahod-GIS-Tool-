@@ -46,6 +46,11 @@
 - Source: [Ministry of Transport — vehicle counts (data.gov.il)](https://data.gov.il/he/datasets/ministry_of_transport/vehicle_counts)
 - Selection rationale: Additional traffic-count datasets were considered; only this resource matched the structure, fields, and semantics the current Mahod tool expects for the output it produces today.
 
+## תשתיות רכבת ישראל (rail_stat)
+
+- מקור: [data.gov.il — ministry_of_transport / rail_stat](https://data.gov.il/he/datasets/ministry_of_transport/rail_stat)
+- הערה: מערך הנתונים הרשמי של משרד התחבורה בפורטל data.gov.il; לפרטי שדות, עדכונים וקבצי הורדה יש לעיין בעמוד המקור.
+
 ## Road accidents — CBS TAZ aggregate (`accid_taz` / accid_taz.csv)
 
 - **What we load:** A government table exported as CSV with one row per **TAZ** (traffic analysis zone): population, land use, injury and vehicle-involvement counts, `YEARMONTH`, `CITYCODE` (CBS municipality code where present), and shape metrics (`Shape_Length`, `Shape_Area`). In Postgres these map to `public.accidents` (snake_case columns; `PRIVATE` from the file → `private_vehicle`, `VEHICLE` → `vehicles`).
