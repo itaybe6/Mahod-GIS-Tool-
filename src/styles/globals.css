@@ -93,6 +93,22 @@
     border-radius: 50%;
     position: relative;
   }
+  /* Solid coloured core above the pulse ring so the marker's tone (green for
+     transit, red for accidents, etc.) stays dominant on dark tiles. */
+  .marker-glow::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: currentColor;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.45);
+    z-index: 2;
+  }
   .marker-glow::after {
     content: '';
     position: absolute;
@@ -101,6 +117,7 @@
     border: 1.5px solid currentColor;
     opacity: 0.45;
     @apply animate-marker-pulse;
+    z-index: 1;
   }
   .marker-red {
     background: #ef4444;
@@ -109,7 +126,7 @@
   }
   .marker-emerald {
     background: #2eaa6f;
-    color: #2eaa6f;
+    color: #22c55e;
     box-shadow: 0 0 10px #2eaa6f;
   }
   .marker-amber {
