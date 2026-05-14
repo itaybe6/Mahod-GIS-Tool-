@@ -29,7 +29,7 @@ export interface AnalysisResult {
   domain: 'accidents' | 'transit' | 'roads' | 'infrastructure';
 }
 
-export type LayerKey = 'transit' | 'accidents' | 'roads' | 'infrastructure';
+export type LayerKey = 'transit' | 'accidents' | 'roads' | 'infrastructure' | 'traffic';
 
 export interface BBox {
   north: number;

@@ -21,6 +21,7 @@ export const useMapStore = create<MapState>((set) => ({
     accidents: true,
     roads: false,
     infrastructure: true,
+    traffic: true,
   },
   activeDomain: 'transit',
 

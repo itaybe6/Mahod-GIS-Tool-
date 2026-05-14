@@ -1,4 +1,4 @@
-import { Bus, AlertTriangle, Route, Train } from 'lucide-react';
+import { Bus, AlertTriangle, Route, Train, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   useAnalysisStore,
@@ -36,6 +36,12 @@ const LAYERS: LayerEntry[] = [
     title: 'תשתיות',
     description: 'רכבת ישראל + תוואי מטרו ורק"ל',
     icon: Train,
+  },
+  {
+    key: 'traffic',
+    title: 'ספירות תנועה',
+    description: 'תחנות ספירה + פילוח נפח לפי סוג רכב ושעה',
+    icon: Gauge,
   },
 ];
 

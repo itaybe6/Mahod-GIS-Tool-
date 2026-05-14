@@ -11,10 +11,11 @@ const PALETTE: Record<AnalysisLayerKey, { color: string; label: string }> = {
   accidents: { color: '#ef4444', label: 'תאונה' },
   roads: { color: '#f59e0b', label: 'דרך' },
   infrastructure: { color: '#a855f7', label: 'תשתית' },
+  traffic: { color: '#0ea5e9', label: 'ספירת תנועה' },
 };
 
 /**
- * Both stores share the same 4-layer vocabulary, so the conversion is a
+ * Both stores share the same layer vocabulary, so the conversion is a
  * 1:1 cast — kept as a typed map to keep TS happy if the keys diverge later.
  */
 const ANALYSIS_TO_MAP: Record<AnalysisLayerKey, LayerKey> = {
@@ -22,6 +23,7 @@ const ANALYSIS_TO_MAP: Record<AnalysisLayerKey, LayerKey> = {
   accidents: 'accidents',
   roads: 'roads',
   infrastructure: 'infrastructure',
+  traffic: 'traffic',
 };
 
 /**
@@ -112,6 +114,16 @@ function buildPopupHtml(key: AnalysisLayerKey, feature: Feature<Geometry>): stri
     pushIf('category', 'סוג');
     pushIf('name');
     pushIf('status', 'סטטוס');
+  } else if (key === 'traffic') {
+    pushIf('description', 'תיאור');
+    pushIf('count_type', 'סוג');
+    pushIf('count_date', 'תאריך');
+    if (typeof props.total_volume === 'number' && props.total_volume > 0) {
+      lines.push(`נפח כולל: ${(props.total_volume as number).toLocaleString('he-IL')}`);
+    }
+    if (typeof props.volume_rows === 'number' && props.volume_rows > 0) {
+      lines.push(`רשומות: ${(props.volume_rows as number).toLocaleString('he-IL')}`);
+    }
   }
 
   return lines.join('<br/>');

@@ -32,9 +32,14 @@ const TABS: Record<LayerKey, TabMeta> = {
     description: 'נקודה סגולה = תשתית ציבורית',
     colorKey: 'infra',
   },
+  traffic: {
+    label: 'ספירות תנועה',
+    description: 'נקודה תכולה = תחנת ספירת תנועה (Vol4)',
+    colorKey: 'traffic',
+  },
 };
 
-const TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure'];
+const TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
 
 /**
  * Pill-shaped tab strip that "spotlights" a specific domain on the map.

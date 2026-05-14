@@ -15,6 +15,7 @@ export const STATUS_COLORS = {
   warning: '#f59e0b',
   success: '#10b981',
   purple: '#8b5cf6',
+  cyan: '#0ea5e9',
 } as const;
 
 export const SURFACE_COLORS = {
@@ -32,6 +33,7 @@ export const LAYER_COLORS = {
   accidents: STATUS_COLORS.danger,
   roads: STATUS_COLORS.warning,
   infra: STATUS_COLORS.purple,
+  traffic: STATUS_COLORS.cyan,
 } as const;
 
 export type LayerColorKey = keyof typeof LAYER_COLORS;

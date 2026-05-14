@@ -7,6 +7,7 @@ export interface AnalysisLayerSelection {
   accidents: boolean;
   roads: boolean;
   infrastructure: boolean;
+  traffic: boolean;
 }
 
 export type AnalysisLayerKey = keyof AnalysisLayerSelection;
@@ -19,9 +20,19 @@ export interface LayerCounts {
   breakdown?: Record<string, number>;
 }
 
+/** Pre-aggregated detail block returned by `query_traffic_in_polygon`. */
+export interface TrafficDetails {
+  by_group: Array<{ group: string; volume: number }>;
+  top_types: Array<{ vehicle_type: string; volume: number }>;
+  /** Map of "0".."23" → total volume in that hour bucket. */
+  by_hour: Record<string, number>;
+}
+
 export interface LayerResult {
   features: FeatureCollection;
   counts: LayerCounts;
+  /** Layer-specific extras. Only `traffic` populates this today. */
+  traffic?: TrafficDetails;
 }
 
 export interface AnalysisResults {
@@ -29,6 +40,7 @@ export interface AnalysisResults {
   accidents?: LayerResult;
   roads?: LayerResult;
   infrastructure?: LayerResult;
+  traffic?: LayerResult;
 }
 
 export type AnalysisStatus = 'idle' | 'running' | 'ready' | 'error';
@@ -55,6 +67,7 @@ const DEFAULT_SELECTION: AnalysisLayerSelection = {
   accidents: true,
   roads: false,
   infrastructure: false,
+  traffic: true,
 };
 
 export const useAnalysisStore = create<AnalysisState>((set) => ({

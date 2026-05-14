@@ -24,6 +24,7 @@ interface LayerSelection {
   accidents?: boolean;
   roads?: boolean;
   infrastructure?: boolean;
+  traffic?: boolean;
 }
 
 interface RequestBody {
@@ -36,6 +37,7 @@ const RPC_NAMES = {
   accidents: 'query_accidents_in_polygon',
   roads: 'query_roads_in_polygon',
   infrastructure: 'query_infra_in_polygon',
+  traffic: 'query_traffic_in_polygon',
 } as const;
 
 type LayerKey = keyof typeof RPC_NAMES;
