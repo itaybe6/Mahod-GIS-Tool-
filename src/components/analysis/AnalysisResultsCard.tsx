@@ -36,6 +36,13 @@ const TRAFFIC_BREAKDOWN_LABELS: Record<string, string> = {
   stations_no_data: 'תחנות ללא דאטה',
 };
 
+const ACCIDENTS_BREAKDOWN_LABELS: Record<string, string> = {
+  total_accidents: 'סה"כ תאונות (מספרים)',
+  fatal: 'הרוגים',
+  severe: 'פצועים קשה',
+  light: 'פצועים קל',
+};
+
 /**
  * Right-panel card that summarises the most recent area-analysis run.
  * Hidden when the analysis store is `idle`. Falls back to a compact
@@ -119,7 +126,12 @@ function LayerRow({ layerKey, result }: LayerRowProps): JSX.Element {
   const Icon = meta.icon;
   const breakdown = result.counts.breakdown;
   const isTraffic = layerKey === 'traffic';
-  const labels = isTraffic ? TRAFFIC_BREAKDOWN_LABELS : null;
+  const isAccidents = layerKey === 'accidents';
+  const labels = isTraffic
+    ? TRAFFIC_BREAKDOWN_LABELS
+    : isAccidents
+      ? ACCIDENTS_BREAKDOWN_LABELS
+      : null;
 
   return (
     <div className="flex flex-col gap-1 rounded border border-border/60 bg-bg-1 px-2 py-1.5">
@@ -132,10 +144,23 @@ function LayerRow({ layerKey, result }: LayerRowProps): JSX.Element {
               ({result.counts.count.toLocaleString('he-IL')} תחנות)
             </span>
           )}
+          {isAccidents && (
+            <span className="text-[10.5px] text-text-faint">
+              ({result.counts.count.toLocaleString('he-IL')} נקודות / אזורי TAZ)
+            </span>
+          )}
         </div>
-        {!isTraffic && (
+        {!isTraffic && !isAccidents && (
           <span className="font-mono text-[12px] text-text">
             {result.counts.count.toLocaleString('he-IL')}
+          </span>
+        )}
+        {isAccidents && typeof breakdown?.total_accidents === 'number' && (
+          <span
+            className="font-mono text-[12px] text-text"
+            title="סה״כ מספרי תאונות (מספרים) בכל אזורי ה-TAZ שנבחרו"
+          >
+            {breakdown.total_accidents.toLocaleString('he-IL')}
           </span>
         )}
       </div>

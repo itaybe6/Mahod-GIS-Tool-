@@ -1,55 +1,62 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useCallback } from 'react';
 import { Search } from 'lucide-react';
+import { MAPBOX_ACCESS_TOKEN } from '@/lib/mapbox/config';
+import type { GeocodeFeatureNormalized } from '@/lib/mapbox/geocoding';
+import { useMapStore } from '@/stores/mapStore';
 import { useUIStore } from '@/stores/uiStore';
-import type { LatLngTuple } from '@/types/common';
+import { MapboxGeocodeAutocomplete } from '@/components/map/MapboxGeocodeAutocomplete';
 
-/** Mock address index used until we hook up a geocoder. */
-const KNOWN_ADDRESSES: Record<string, LatLngTuple> = {
-  הרצל: [32.0707, 34.7766],
-  רבין: [32.0879, 34.7818],
-  איילון: [32.0823, 34.7951],
-  יפו: [32.0501, 34.7547],
-  'רמת גן': [32.068, 34.8248],
-  חולון: [32.0167, 34.7795],
-};
-
-export interface MapSearchProps {
-  /** Receives the resolved coordinates when an entry from `KNOWN_ADDRESSES` matches. */
-  onLocate?: (coords: LatLngTuple, label: string) => void;
+function zoomForPlaceTypes(placeType: string[]): number {
+  if (placeType.includes('address')) return 17;
+  if (placeType.includes('poi')) return 15;
+  if (placeType.includes('neighborhood')) return 13;
+  if (placeType.includes('locality') || placeType.includes('place')) return 11;
+  return 14;
 }
 
-export function MapSearch({ onLocate }: MapSearchProps): JSX.Element {
-  const [value, setValue] = useState('');
-  const showToast = useUIStore((s) => s.showToast);
+export interface MapSearchProps {
+  onLocate?: never;
+}
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key !== 'Enter') return;
-    const query = value.trim();
-    if (!query) return;
-    for (const [key, coords] of Object.entries(KNOWN_ADDRESSES)) {
-      if (query.includes(key)) {
-        onLocate?.(coords, key);
-        showToast(`מיקוד: ${key}`);
-        return;
-      }
-    }
-    showToast('כתובת לא נמצאה');
-  };
+/**
+ * Hebrew Mapbox Geocoding: one field for full address / city / place.
+ * Requires `VITE_MAPBOX_ACCESS_TOKEN` (URL-restrict the token in Mapbox).
+ */
+export function MapSearch(_props: MapSearchProps): JSX.Element {
+  const requestMapFocus = useMapStore((s) => s.requestMapFocus);
+  const showToast = useUIStore((s) => s.showToast);
+  const token = MAPBOX_ACCESS_TOKEN;
+
+  const handlePick = useCallback(
+    (feature: GeocodeFeatureNormalized) => {
+      const [lng, lat] = feature.center;
+      const zoom = zoomForPlaceTypes(feature.place_type);
+      requestMapFocus(lat, lng, zoom, feature.bbox);
+      showToast(`מיקוד: ${feature.place_name}`);
+    },
+    [requestMapFocus, showToast]
+  );
 
   return (
-    <div className="relative max-w-[320px] flex-1">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="חפש כתובת..."
-        className="h-9 w-full rounded-lg border border-border bg-surface px-3 pe-9 text-[13px] text-text outline-none transition-colors placeholder:text-text-faint focus:border-brand-teal"
-      />
-      <Search
-        size={15}
-        className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-text-faint"
-      />
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {!token && (
+        <p className="text-[10px] leading-tight text-amber-500/90">
+          הגדרו VITE_MAPBOX_ACCESS_TOKEN להשלמה אוטומטית (והגבילו לפי URL בחשבון Mapbox).
+        </p>
+      )}
+      <div className="relative max-w-[min(100%,420px)] min-w-0 flex-1 [&_input]:pe-9">
+        <MapboxGeocodeAutocomplete
+          variant="full"
+          placeholder="כתובת מלאה, עיר או מקום…"
+          onPick={handlePick}
+          className="w-full"
+        />
+        <Search
+          size={15}
+          className="pointer-events-none absolute end-3 top-1/2 z-10 -translate-y-1/2 text-text-faint"
+          aria-hidden
+        />
+      </div>
     </div>
   );
 }

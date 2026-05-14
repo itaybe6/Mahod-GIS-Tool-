@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "import:gtfs": "node scripts/import-israel-gtfs.mjs",
     "seed:shapes": "tsx scripts/seed/seed-shapes.ts",
+    "seed:accidents-taz": "tsx scripts/seed/seed-accidents-taz-rest.ts",
     "seed:stop-route": "node --import \"data:text/javascript,import { register } from 'node:module'; import { pathToFileURL } from 'node:url'; process.env.TS_NODE_PROJECT = 'tsconfig.node.json'; register('ts-node/esm', pathToFileURL('./'));\" scripts/seed/seed-stop-route.ts",
     "test": "vitest run",
     "lint": "eslint .",

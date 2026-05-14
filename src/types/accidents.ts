@@ -1,8 +1,9 @@
 import type { Coordinates, Severity } from './common';
 
 /**
- * Road-accident record (LMS — data.gov.il).
- * Full schema will be derived from the official CSV once ingested.
+ * Client-side accident feature (map / analysis). The Supabase `accidents`
+ * table holds CBS TAZ aggregates (`accid_taz`); polygon RPC returns
+ * per-municipality features with properties such as `accidents`, `fatal`, etc.
  */
 export interface AccidentRecord extends Coordinates {
   id: string;

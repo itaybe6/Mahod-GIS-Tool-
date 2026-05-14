@@ -43,7 +43,7 @@ interface MuniProperties {
   Muni_Eng: string;        // "Tel Aviv-Yafo"
   Sug_Muni: string;        // עירייה / מועצה מקומית / מועצה אזורית / מועצה מקומית תעשייתית / ללא שיפוט
   CR_PNIM: string;         // Interior Ministry code (string, may be empty)
-  CR_LAMAS: string;        // CBS code = accidents.semel_yishuv (string, may be empty)
+  CR_LAMAS: string;        // CBS code = accidents.citycode when present (string, may be empty)
   Machoz: string;          // מחוז name in Hebrew
   Hearot: string;
   Eshkol_MPn: string;

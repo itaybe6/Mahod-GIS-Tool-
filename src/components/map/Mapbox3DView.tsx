@@ -20,7 +20,7 @@ import {
   toMapboxLngLat,
 } from '@/features/map/mockData';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
-import { useMapStore } from '@/stores/mapStore';
+import { useMapStore, type LastGeocodeCamera } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
 
 /* -------------------------------------------------------------------------- */
@@ -376,6 +376,14 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
       attachPopup(map, LAYERS.roads, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
       attachPopup(map, LAYERS.routes, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
 
+      // If the user geocoded on Leaflet, `focusRequest` was already consumed there.
+      // Restore that camera on first GL load when we are not prioritising an upload bbox.
+      const uploadBbox = useUploadStore.getState().bbox;
+      const lastCam = useMapStore.getState().lastGeocodeCamera;
+      if (lastCam !== null && uploadBbox == null) {
+        flyMapToLastGeocodeCamera(map, lastCam);
+      }
+
       setGlMapReady(true);
     });
 
@@ -454,6 +462,31 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
     );
   }, [uploadedBbox, glMapReady]);
 
+  const focusRequest = useMapStore((s) => s.focusRequest);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !glMapReady || !loadedRef.current || !focusRequest) return;
+    const { lat, lng, zoom, bbox } = focusRequest;
+    if (bbox && bbox.length === 4) {
+      const [minLng, minLat, maxLng, maxLat] = bbox;
+      map.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 50, maxZoom: 17, duration: 1100, pitch: MAPBOX_3D_DEFAULTS.pitch }
+      );
+    } else {
+      map.flyTo({
+        center: [lng, lat],
+        zoom: zoom ?? 15,
+        duration: 1100,
+        essential: true,
+      });
+    }
+    useMapStore.getState().clearMapFocusRequest();
+  }, [focusRequest, glMapReady]);
+
   if (!MAPBOX_ACCESS_TOKEN) {
     return (
       <div className={`relative h-full w-full ${className ?? ''}`}>
@@ -474,6 +507,32 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                   */
 /* -------------------------------------------------------------------------- */
+
+/** Instant camera sync after GL load (avoids staying on default TLV when switching from 2D). */
+function flyMapToLastGeocodeCamera(map: mapboxgl.Map, cam: LastGeocodeCamera): void {
+  if (cam.bbox !== undefined && cam.bbox.length === 4) {
+    const [minLng, minLat, maxLng, maxLat] = cam.bbox;
+    map.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      {
+        padding: 50,
+        maxZoom: 17,
+        duration: 0,
+        pitch: MAPBOX_3D_DEFAULTS.pitch,
+      }
+    );
+    return;
+  }
+  map.jumpTo({
+    center: [cam.lng, cam.lat],
+    zoom: cam.zoom,
+    pitch: MAPBOX_3D_DEFAULTS.pitch,
+    bearing: MAPBOX_3D_DEFAULTS.bearing,
+  });
+}
 
 function applyVisibility(
   map: mapboxgl.Map,

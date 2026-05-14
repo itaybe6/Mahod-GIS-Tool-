@@ -22,7 +22,7 @@ const LAYERS: LayerEntry[] = [
   {
     key: 'accidents',
     title: 'תאונות דרכים',
-    description: 'תאונות מתועדות (LMS) עם פירוט חומרה',
+    description: 'אגרגט תאונות CBS לפי אזור TAZ, מוצג לפי יישוב בתוך הפוליגון',
     icon: AlertTriangle,
   },
   {

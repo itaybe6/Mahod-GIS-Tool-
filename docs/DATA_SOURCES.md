@@ -24,3 +24,12 @@
 
 - Source: [Ministry of Transport — vehicle counts (data.gov.il)](https://data.gov.il/he/datasets/ministry_of_transport/vehicle_counts)
 - Selection rationale: Additional traffic-count datasets were considered; only this resource matched the structure, fields, and semantics the current Mahod tool expects for the output it produces today.
+
+## Road accidents — CBS TAZ aggregate (`accid_taz` / accid_taz.csv)
+
+- **What we load:** A government table exported as CSV with one row per **TAZ** (traffic analysis zone): population, land use, injury and vehicle-involvement counts, `YEARMONTH`, `CITYCODE` (CBS municipality code where present), and shape metrics (`Shape_Length`, `Shape_Area`). In Postgres these map to `public.accidents` (snake_case columns; `PRIVATE` from the file → `private_vehicle`, `VEHICLE` → `vehicles`).
+- **Why this file and not “accidents by municipality” from GOV:** The `accid_taz` export is the **most up-to-date** accident aggregate we could obtain in a stable CSV from the government open-data path. The dedicated “road accidents by municipal authority” dataset on data.gov.il **returns a download error** in practice, so we cannot rely on it for ingestion. TAZ-level rows still carry `CITYCODE` where the CBS links the zone to a formal municipality, which lets `query_accidents_in_polygon` join to `municipalities.semel_yishuv` and aggregate inside a user polygon.
+- **Spatial behaviour:** Rows are **not** individual LMS accident points. The RPC builds **one map feature per matched municipality** (centroid of the municipal polygon) with summed TAZ statistics for that city code; `counts.count` is the sum of `sumacciden` (reported accidents in the aggregate), and `breakdown` uses summed `dead` / `sever_inj` / `sligh_inj` for fatality / severe / light injury totals.
+- **Re-seed:** From `mahod-gis` root (optional `ACCID_TAZ_CSV` for path; otherwise `%USERPROFILE%\Downloads\accid_taz.csv` if present):  
+  `npm run seed:accidents-taz`  
+  (uses `SUPABASE_URL` or `VITE_SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY` from `.env`.)

@@ -19,7 +19,7 @@ const TABS: Record<LayerKey, TabMeta> = {
   },
   accidents: {
     label: 'תאונות',
-    description: 'נקודה אדומה = תאונת דרכים (LMS)',
+    description: 'תאונות לפי יישוב (אגרגט CBS / TAZ)',
     colorKey: 'accidents',
   },
   roads: {

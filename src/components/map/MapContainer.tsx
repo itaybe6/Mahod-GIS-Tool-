@@ -66,6 +66,60 @@ function TileSwitcher(): null {
   return null;
 }
 
+/** Applies one-shot `mapStore.focusRequest` (geocode toolbar) then clears it. */
+function MapFocusController(): null {
+  const map = useMap();
+  const focusRequest = useMapStore((s) => s.focusRequest);
+
+  useEffect(() => {
+    if (!focusRequest) return;
+    const { lat, lng, zoom, bbox } = focusRequest;
+    if (bbox && bbox.length === 4) {
+      const [minLng, minLat, maxLng, maxLat] = bbox;
+      map.fitBounds(
+        [
+          [minLat, minLng],
+          [maxLat, maxLng],
+        ],
+        { padding: [28, 28], maxZoom: MAX_MAP_ZOOM, animate: true, duration: 1.1 }
+      );
+    } else {
+      map.flyTo([lat, lng], zoom ?? 15, { duration: 1.15 });
+    }
+    useMapStore.getState().clearMapFocusRequest();
+  }, [focusRequest, map]);
+
+  return null;
+}
+
+/**
+ * When returning from Mapbox GL, `focusRequest` may already be cleared.
+ * Apply `lastGeocodeCamera` once on Leaflet mount if there is no upload bbox.
+ */
+function LeafletGeocodeRestore(): null {
+  const map = useMap();
+
+  useEffect(() => {
+    const cam = useMapStore.getState().lastGeocodeCamera;
+    const uploadBbox = useUploadStore.getState().bbox;
+    if (cam === null || uploadBbox != null) return;
+    if (cam.bbox !== undefined && cam.bbox.length === 4) {
+      const [minLng, minLat, maxLng, maxLat] = cam.bbox;
+      map.fitBounds(
+        [
+          [minLat, minLng],
+          [maxLat, maxLng],
+        ],
+        { padding: [28, 28], maxZoom: MAX_MAP_ZOOM, animate: false }
+      );
+    } else {
+      map.setView([cam.lat, cam.lng], cam.zoom, { animate: false });
+    }
+  }, [map]);
+
+  return null;
+}
+
 export interface MapViewProps {
   className?: string;
 }
@@ -122,6 +176,8 @@ export function MapView({ className }: MapViewProps): JSX.Element {
           )}
           <ScaleControl position="bottomleft" metric imperial={false} />
           <TileSwitcher />
+          <MapFocusController />
+          <LeafletGeocodeRestore />
           <UploadedPolygonLayer />
           <AnalysisResultsLayer />
 

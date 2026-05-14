@@ -59,15 +59,22 @@ export function AnalysisResultsLayer(): JSX.Element | null {
           <GeoJSON
             key={dataKey}
             data={layer.features}
-            pointToLayer={(_feature, latlng) =>
-              L.circleMarker(latlng, {
-                radius: 5,
+            pointToLayer={(feature, latlng) => {
+              let radius = 5;
+              if (key === 'accidents') {
+                const n = Number(
+                  (feature.properties as Record<string, unknown> | undefined)?.accidents ?? 0
+                );
+                radius = Math.min(12, 4 + Math.sqrt(Math.max(0, n)) * 0.5);
+              }
+              return L.circleMarker(latlng, {
+                radius,
                 color: colour,
                 weight: 1.5,
                 fillColor: colour,
                 fillOpacity: 0.85,
-              })
-            }
+              });
+            }}
             style={() => ({
               color: colour,
               weight: 2.5,
@@ -100,9 +107,16 @@ function buildPopupHtml(key: AnalysisLayerKey, feature: Feature<Geometry>): stri
     pushIf('stop_name');
     pushIf('routes', 'מספר קווים');
   } else if (key === 'accidents') {
+    pushIf('id', 'מזהה אזור (TAZ)');
+    pushIf('city', 'יישוב');
+    pushIf('accidents', 'תאונות (סכום TAZ)');
+    pushIf('fatal', 'הרוגים');
+    pushIf('severe_inj', 'פצועים קשה');
+    pushIf('light_inj', 'פצועים קל');
     pushIf('year', 'שנה');
-    pushIf('severity', 'חומרה');
+    pushIf('month', 'חודש');
     pushIf('type', 'סוג');
+    pushIf('severity', 'חומרה');
   } else if (key === 'roads') {
     pushIf('road_number', 'כביש');
     pushIf('road_name');
