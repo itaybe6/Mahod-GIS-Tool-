@@ -8,7 +8,7 @@ const ACCID_TAZ_URL = 'https://data.gov.il/he/datasets/ministry_of_transport/acc
  */
 export function AccidentsPage(): JSX.Element {
   return (
-    <div className="flex min-w-0 flex-1 items-center justify-center p-6" dir="rtl">
+    <div className="flex min-w-0 flex-1 items-center justify-center overflow-y-auto p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]" dir="rtl">
       <div className="max-w-lg animate-fadein rounded-md border border-border bg-surface p-8 text-center shadow-card">
         <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-brand-teal/20 bg-brand-teal/10 text-brand-teal">
           <Sparkles size={22} />

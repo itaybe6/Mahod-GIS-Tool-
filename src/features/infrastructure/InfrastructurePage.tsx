@@ -357,7 +357,7 @@ export function InfrastructurePage(): JSX.Element {
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:p-3.5">
+    <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:p-3.5 lg:overflow-hidden lg:pb-3.5">
       <header className="flex shrink-0 flex-wrap items-center gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand-teal/10 text-brand-teal">

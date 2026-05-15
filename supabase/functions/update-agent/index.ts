@@ -9,6 +9,7 @@
  * Currently wired:
  *   - accidents      (accid_taz)
  *   - traffic_counts (vehicle_counts → Countsvol4_YYYY)
+ *   - railway        (rail_stat → RAIL_STAT_CSV + RAIL_STAT_SHP)
  *
  * Add new adapters by creating a module that exports a default `Adapter`
  * (see `./types.ts`) and registering it in ADAPTER_MAP below.
@@ -22,6 +23,7 @@ import { hasChanged, packageShow, pickResourceByName } from "./ckan.ts";
 import type { Adapter } from "./types.ts";
 import accidentsAdapter from "./adapters/accidents.ts";
 import vehicleCountsAdapter from "./adapters/vehicleCounts.ts";
+import railwayAdapter from "./adapters/railway.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,7 @@ interface UpdateLogEntry {
 const ADAPTER_MAP: Record<string, Adapter> = {
   accidents:      accidentsAdapter,
   traffic_counts: vehicleCountsAdapter,
+  railway:        railwayAdapter,
   // roadauthority: roadAuthorityAdapter,   ← next adapter goes here
   // gtfs:          gtfsAdapter,
 };

@@ -63,7 +63,7 @@ export function AppShell({
   }, [mobileSidebarOpen, mobileRightPanelOpen]);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden">
+    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden">
       <LoadingBar />
 
       <MobileTopBar showRightPanelToggle={showMobileRightPanel} />
@@ -81,7 +81,7 @@ export function AppShell({
           <Sidebar />
         </div>
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-bg-1 lg:flex-none">
+        <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-bg-1 lg:flex-none lg:overflow-hidden">
           {children}
         </main>
 

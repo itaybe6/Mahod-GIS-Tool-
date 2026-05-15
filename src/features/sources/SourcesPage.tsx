@@ -59,7 +59,7 @@ export function SourcesPage(): JSX.Element {
   if (!isSupabaseConfigured) {
     return (
       <div
-        className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3.5"
+        className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3.5 pb-[calc(env(safe-area-inset-bottom)+0.875rem)]"
         dir="rtl"
       >
         <h1 className="text-lg font-semibold text-text">מקורות מידע</h1>
@@ -80,7 +80,7 @@ export function SourcesPage(): JSX.Element {
 
   return (
     <div
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3 sm:p-3.5"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:p-3.5 lg:pb-3.5"
       dir="rtl"
     >
       <div className="flex flex-wrap items-end justify-between gap-2">

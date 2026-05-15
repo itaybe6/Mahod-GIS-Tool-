@@ -24,7 +24,7 @@ export function StatisticsPage(): JSX.Element {
   }
 
   return (
-    <div dir="rtl" className="min-h-0 flex-1 overflow-y-auto bg-bg-1">
+    <div dir="rtl" className="min-h-0 flex-1 overflow-y-auto bg-bg-1 pb-[env(safe-area-inset-bottom)]">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,111,181,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(46,170,111,0.14),transparent_30%)]" />
       <div className="relative mx-auto flex max-w-[1440px] flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-5">
         <header className="overflow-hidden rounded-lg border border-border bg-surface p-4 shadow-card ring-1 ring-white/[0.03] sm:p-5">

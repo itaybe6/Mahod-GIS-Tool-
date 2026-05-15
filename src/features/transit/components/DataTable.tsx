@@ -30,14 +30,14 @@ export function DataTable({
   errorMessage,
 }: DataTableProps): JSX.Element {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-surface to-bg-1 shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
+    <div className="relative flex min-h-[360px] flex-none flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-surface to-bg-1 shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:min-h-[420px] lg:min-h-0 lg:flex-1">
       {isFetching && !isLoading && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-0.5 overflow-hidden">
           <div className="top-loader" />
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto overscroll-contain">
         <table className="min-w-full border-separate border-spacing-0 text-start">
           <thead className="sticky top-0 z-10 bg-gradient-to-l from-slate-900/95 via-surface-2/95 to-slate-900/95 backdrop-blur">
             <tr>

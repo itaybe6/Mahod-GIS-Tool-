@@ -67,7 +67,7 @@ export function AppRouter(): JSX.Element {
       <Route
         path={ROUTES.ROUTE_PLANNER}
         element={
-          <AppShell rightPanel={<RoutePlannerPanel />}>
+          <AppShell rightPanel={<RoutePlannerPanel />} showMobileRightPanel={false}>
             <RoutePlannerPage />
           </AppShell>
         }

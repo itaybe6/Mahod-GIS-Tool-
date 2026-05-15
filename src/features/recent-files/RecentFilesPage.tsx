@@ -114,7 +114,7 @@ export function RecentFilesPage(): JSX.Element {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="flex min-w-0 flex-1 items-center justify-center bg-bg-1 p-6" dir="rtl">
+      <div className="flex min-w-0 flex-1 items-center justify-center overflow-y-auto bg-bg-1 p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]" dir="rtl">
         <div className="max-w-md rounded-lg border border-warning/30 bg-warning/5 p-6 text-center">
           <AlertTriangle className="mx-auto mb-2 text-warning" size={26} />
           <h2 className="mb-1 text-base font-semibold text-text">Supabase לא מוגדר</h2>
@@ -128,7 +128,7 @@ export function RecentFilesPage(): JSX.Element {
 
   if (authGate === 'checking' || authGate === 'denied') {
     return (
-      <div className="flex flex-1 items-center justify-center bg-bg-1 p-6" dir="rtl">
+      <div className="flex flex-1 items-center justify-center overflow-y-auto bg-bg-1 p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]" dir="rtl">
         <Loader2 className="animate-spin text-brand-teal" size={28} aria-label="טוען" />
       </div>
     );
@@ -136,7 +136,7 @@ export function RecentFilesPage(): JSX.Element {
 
   return (
     <div
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto bg-bg-1 p-3 sm:p-3.5"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto bg-bg-1 p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:p-3.5 lg:pb-3.5"
       dir="rtl"
     >
       <div>

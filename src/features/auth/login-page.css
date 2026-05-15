@@ -10,6 +10,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   background: var(--auth-bg-0);
   color: var(--auth-text);
@@ -264,6 +265,7 @@
     grid-template-columns: 1fr;
     height: auto;
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .auth-video-side {

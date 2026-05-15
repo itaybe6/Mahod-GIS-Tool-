@@ -55,6 +55,8 @@ const NAV_SECTIONS: NavSection[] = [
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1';
 
+type DataPullTarget = 'all' | 'traffic_counts' | 'railway';
+
 /**
  * `variant="mobile"` forces the full-label layout (used inside the mobile
  * navigation drawer where there's plenty of horizontal room). `desktop`
@@ -72,23 +74,36 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
   const labelHide = isMobile ? '' : 'max-[1280px]:hidden';
   const itemCollapse = isMobile ? '' : 'max-[1280px]:justify-center max-[1280px]:px-1.5';
   const activeIndicatorOffset = isMobile ? '-end-3' : '-end-3 max-[1280px]:-end-2';
-  const [isTestingDataPull, setIsTestingDataPull] = useState(false);
+  const [testingDataPullTarget, setTestingDataPullTarget] = useState<DataPullTarget | null>(null);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
   const showToast = useUIStore((s) => s.showToast);
 
-  const handleDataPullTest = async (): Promise<void> => {
-    if (isTestingDataPull) return;
+  const handleDataPullTest = async (target: DataPullTarget = 'all'): Promise<void> => {
+    if (testingDataPullTarget !== null) return;
     if (!isSupabaseConfigured) {
       showToast('Supabase לא מוגדר (חסרים VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).', 5000);
       return;
     }
 
-    setIsTestingDataPull(true);
-    showToast('בודק משיכת נתונים...');
+    const functionName =
+      target === 'traffic_counts'
+        ? 'update-agent?source=traffic_counts&force=true'
+        : target === 'railway'
+          ? 'update-agent?source=railway&force=true'
+          : 'update-agent';
+    const toastLabel =
+      target === 'traffic_counts'
+        ? 'בודק משיכת vehicleCounts...'
+        : target === 'railway'
+          ? 'בודק משיכת רכבת כבדה...'
+          : 'בודק משיכת נתונים...';
+
+    setTestingDataPullTarget(target);
+    showToast(toastLabel);
 
     try {
-      const result = (await supabase.functions.invoke<UpdateAgentResponse>('update-agent')) as {
+      const result = (await supabase.functions.invoke<UpdateAgentResponse>(functionName)) as {
         data: UpdateAgentResponse | null;
         error: unknown | null;
       };
@@ -103,7 +118,7 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
     } catch (err) {
       showToast((err as Error).message || 'בדיקת משיכת הנתונים נכשלה', 6000);
     } finally {
-      setIsTestingDataPull(false);
+      setTestingDataPullTarget(null);
     }
   };
 
@@ -153,13 +168,43 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
           כלים
         </div>
         <SidebarActionItem
-          label={isTestingDataPull ? 'בודק משיכת נתונים...' : 'בדיקת משיכת נתונים'}
+          label={testingDataPullTarget === 'all' ? 'בודק משיכת נתונים...' : 'בדיקת משיכת נתונים'}
           icon={RefreshCw}
           onClick={() => {
             void handleDataPullTest();
           }}
-          disabled={isTestingDataPull}
-          iconClassName={isTestingDataPull ? 'animate-spin' : undefined}
+          disabled={testingDataPullTarget !== null}
+          iconClassName={testingDataPullTarget === 'all' ? 'animate-spin' : undefined}
+          labelHide={labelHide}
+          itemCollapse={itemCollapse}
+        />
+        <SidebarActionItem
+          label={
+            testingDataPullTarget === 'traffic_counts'
+              ? 'מושך vehicleCounts...'
+              : 'משיכת vehicleCounts'
+          }
+          icon={RefreshCw}
+          onClick={() => {
+            void handleDataPullTest('traffic_counts');
+          }}
+          disabled={testingDataPullTarget !== null}
+          iconClassName={testingDataPullTarget === 'traffic_counts' ? 'animate-spin' : undefined}
+          labelHide={labelHide}
+          itemCollapse={itemCollapse}
+        />
+        <SidebarActionItem
+          label={
+            testingDataPullTarget === 'railway'
+              ? 'מושך רכבת כבדה...'
+              : 'משיכת רכבת כבדה'
+          }
+          icon={RefreshCw}
+          onClick={() => {
+            void handleDataPullTest('railway');
+          }}
+          disabled={testingDataPullTarget !== null}
+          iconClassName={testingDataPullTarget === 'railway' ? 'animate-spin' : undefined}
           labelHide={labelHide}
           itemCollapse={itemCollapse}
         />
