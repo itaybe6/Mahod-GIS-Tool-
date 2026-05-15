@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   AlertTriangle,
@@ -7,10 +7,14 @@ import {
   Building2,
   Database,
   History,
+  LogIn,
+  LogOut,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES, type RoutePath } from '@/constants/routes';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase/client';
+import { useAuthStore } from '@/stores/authStore';
 import { MahodLogo } from './MahodLogo';
 
 interface NavEntry {
@@ -48,6 +52,15 @@ const NAV_SECTIONS: NavSection[] = [
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1';
 
 export function Sidebar(): JSX.Element {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
+  const handleLogout = async (): Promise<void> => {
+    await supabase.auth.signOut();
+    logout();
+    navigate(ROUTES.LOGIN);
+  };
+
   return (
     <aside
       className="flex flex-col overflow-y-auto border-s border-border bg-[radial-gradient(circle_at_0%_0%,rgba(26,111,181,0.2),transparent_52%),radial-gradient(circle_at_100%_0%,rgba(26,111,181,0.14),transparent_48%),#0a0e1a] px-3 pb-3.5 pt-4"
@@ -63,6 +76,20 @@ export function Sidebar(): JSX.Element {
           ))}
         </div>
       ))}
+
+      <div className="mt-5">
+        {isAuthenticated ? (
+          <SidebarActionItem
+            label="התנתקות"
+            icon={LogOut}
+            onClick={() => {
+              void handleLogout();
+            }}
+          />
+        ) : (
+          <SidebarItem entry={{ to: ROUTES.LOGIN, label: 'התחברות', icon: LogIn }} />
+        )}
+      </div>
 
       <div className="mt-auto border-t border-border pt-4 text-center text-[11px] leading-[1.6] text-text-faint">
         <span className="mb-1.5 inline-block rounded-full border border-border bg-brand-teal/10 px-1.5 py-0.5 font-mono text-[10px] text-brand-teal">
@@ -122,5 +149,28 @@ function SidebarItem({ entry }: SidebarItemProps): JSX.Element {
         </>
       )}
     </NavLink>
+  );
+}
+
+interface SidebarActionItemProps {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}
+
+function SidebarActionItem({ label, icon: Icon, onClick }: SidebarActionItemProps): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group relative my-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors',
+        'max-[1280px]:justify-center max-[1280px]:px-1.5',
+        'text-text hover:bg-white/[0.04]'
+      )}
+    >
+      <Icon size={16} className="shrink-0" />
+      <span className="max-[1280px]:hidden">{label}</span>
+    </button>
   );
 }

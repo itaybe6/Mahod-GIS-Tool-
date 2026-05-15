@@ -31,6 +31,9 @@ export interface AnalysisResult {
 
 export type LayerKey = 'transit' | 'accidents' | 'roads' | 'infrastructure' | 'traffic';
 
+/** Top dashboard map tabs: one layer, or every layer at once. */
+export type MapDomainTab = LayerKey | 'all';
+
 export interface BBox {
   north: number;
   south: number;

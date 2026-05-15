@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAnalysisStore, type AnalysisLayerKey } from '@/stores/analysisStore';
 import { useMapStore } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
-import type { LayerKey } from '@/types/common';
+import type { LayerKey, MapDomainTab } from '@/types/common';
 import type { FeatureCollection, Geometry } from 'geojson';
 
 /* ── Meta per layer ─────────────────────────────────────────────── */
@@ -94,7 +94,7 @@ const str = (v: unknown): string => (v == null ? '' : String(v));
 
 export function LayerResultsPanel(): JSX.Element | null {
   const [dismissed, setDismissed] = useState(false);
-  const [prevDomain, setPrevDomain] = useState<LayerKey | null>(null);
+  const [prevDomain, setPrevDomain] = useState<MapDomainTab | null>(null);
 
   const activeDomain = useMapStore((s) => s.activeDomain);
   const setFocusAnalysisFeature = useMapStore((s) => s.setFocusAnalysisFeature);
@@ -108,6 +108,8 @@ export function LayerResultsPanel(): JSX.Element | null {
   }
 
   if (!polygon || dismissed) return null;
+
+  if (activeDomain === 'all') return null;
 
   const meta = LAYER_META[activeDomain];
   const layerResult = results?.[activeDomain as AnalysisLayerKey];

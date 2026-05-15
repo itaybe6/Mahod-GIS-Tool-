@@ -16,6 +16,10 @@ import { useMapStore } from '@/stores/mapStore';
 import type { LucideIcon } from 'lucide-react';
 import type { LayerKey } from '@/types/common';
 import type { FeatureCollection, Geometry } from 'geojson';
+import {
+  useMetroStations,
+  useRailwayStations,
+} from '@/features/infrastructure/useRailwayStations';
 
 /* ── Static config per layer ──────────────────────────────────── */
 interface LayerStatConfig {
@@ -221,7 +225,10 @@ export function AnalysisBottomSection(): JSX.Element {
   const [expandedLayer, setExpandedLayer] = useState<LayerKey | null>(null);
   const results = useAnalysisStore((s) => s.results);
   const status = useAnalysisStore((s) => s.status);
+  const { data: railwayStations } = useRailwayStations();
+  const { data: metroStations } = useMetroStations();
   const hasAnalysis = status === 'ready' && results != null;
+  const infrastructureCount = (railwayStations?.length ?? 0) + (metroStations?.length ?? 0);
 
   const visibleStats = hasAnalysis
     ? LAYER_STATS.filter(
@@ -265,7 +272,9 @@ export function AnalysisBottomSection(): JSX.Element {
 
           const displayValue = hasResult
             ? analysisResult.counts.count.toLocaleString('he-IL')
-            : cfg.staticValue;
+            : cfg.key === 'infrastructure'
+              ? infrastructureCount.toLocaleString('he-IL')
+              : cfg.staticValue;
 
           const pillTone: StatPillTone =
             cfg.key === 'traffic' ? 'emerald' : (cfg.tone as StatPillTone);

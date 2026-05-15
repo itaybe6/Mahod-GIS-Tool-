@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MapType } from '@/constants/mapConfig';
-import type { LayerKey } from '@/types/common';
+import type { LayerKey, MapDomainTab } from '@/types/common';
 import { useUploadStore } from '@/stores/uploadStore';
 
 const ALL_LAYER_KEYS: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
@@ -11,6 +11,10 @@ function exclusiveActiveLayers(domain: LayerKey): Record<LayerKey, boolean> {
     LayerKey,
     boolean
   >;
+}
+
+function allLayersEnabled(): Record<LayerKey, boolean> {
+  return Object.fromEntries(ALL_LAYER_KEYS.map((k) => [k, true])) as Record<LayerKey, boolean>;
 }
 
 export interface FocusAnalysisFeature {
@@ -39,8 +43,8 @@ export interface LastGeocodeCamera {
 interface MapState {
   mapType: MapType;
   activeLayers: Record<LayerKey, boolean>;
-  /** Active tab in the map top-bar (controls which domain is "spotlighted"). */
-  activeDomain: LayerKey;
+  /** Active tab in the map top-bar (`all` = every layer on the map). */
+  activeDomain: MapDomainTab;
   /** Latest geocode focus; cleared by map views after applying. */
   focusRequest: MapFocusRequest | null;
   /** Last successful geocode camera — reapplied when entering Mapbox GL if no upload bbox. */
@@ -51,7 +55,7 @@ interface MapState {
   setMapType: (type: MapType) => void;
   toggleLayer: (layer: LayerKey) => void;
   setLayer: (layer: LayerKey, enabled: boolean) => void;
-  setActiveDomain: (domain: LayerKey) => void;
+  setActiveDomain: (domain: MapDomainTab) => void;
   requestMapFocus: (
     lat: number,
     lng: number,
@@ -65,8 +69,8 @@ interface MapState {
 
 export const useMapStore = create<MapState>((set) => ({
   mapType: 'dark',
-  activeLayers: exclusiveActiveLayers('transit'),
-  activeDomain: 'transit',
+  activeLayers: allLayersEnabled(),
+  activeDomain: 'all',
   focusRequest: null,
   lastGeocodeCamera: null,
   focusAnalysisFeature: null,
@@ -90,7 +94,10 @@ export const useMapStore = create<MapState>((set) => ({
       activeLayers: { ...state.activeLayers, [layer]: enabled },
     })),
   setActiveDomain: (domain) =>
-    set({ activeDomain: domain, activeLayers: exclusiveActiveLayers(domain) }),
+    set({
+      activeDomain: domain,
+      activeLayers: domain === 'all' ? allLayersEnabled() : exclusiveActiveLayers(domain),
+    }),
   requestMapFocus: (lat, lng, zoom, bbox) =>
     set(() => {
       const resolvedZoom = zoom ?? 15;

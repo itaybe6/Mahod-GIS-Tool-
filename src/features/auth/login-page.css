@@ -45,46 +45,16 @@
   background: radial-gradient(circle at 18% 0%, rgba(45, 161, 61, 0.1), transparent 48%), var(--auth-bg-1);
 }
 
-.auth-top-strip {
-  position: absolute;
-  right: 56px;
-  left: 56px;
-  top: 28px;
+.auth-hero-logo-wrap {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  margin-bottom: 8px;
 }
 
-.auth-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.auth-logo {
-  width: 112px;
+.auth-hero-logo {
+  width: min(320px, 90%);
   height: auto;
-}
-
-.auth-brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.auth-brand-name {
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.auth-brand-tag {
-  font-size: 11px;
-  color: var(--auth-text-dim);
-}
-
-.auth-secure {
-  color: var(--auth-text-dim);
-  font-size: 12px;
+  object-fit: contain;
 }
 
 .auth-card {
@@ -206,8 +176,7 @@
   color: var(--auth-text-dim);
 }
 
-.auth-primary-btn,
-.auth-secondary-btn {
+.auth-primary-btn {
   border: 0;
   border-radius: 10px;
   height: 50px;
@@ -224,12 +193,6 @@
 .auth-primary-btn:disabled {
   opacity: 0.75;
   cursor: wait;
-}
-
-.auth-secondary-btn {
-  color: var(--auth-text);
-  border: 1px solid var(--auth-border);
-  background: var(--auth-surface);
 }
 
 .auth-divider {
@@ -280,7 +243,6 @@
     padding: 28px 24px 72px;
   }
 
-  .auth-top-strip,
   .auth-footer {
     left: 24px;
     right: 24px;

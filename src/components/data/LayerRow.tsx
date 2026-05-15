@@ -5,6 +5,10 @@ import { cn } from '@/lib/utils';
 import { useMapStore } from '@/stores/mapStore';
 import { useUIStore } from '@/stores/uiStore';
 import type { LayerKey } from '@/types/common';
+import {
+  useMetroStations,
+  useRailwayStations,
+} from '@/features/infrastructure/useRailwayStations';
 
 export interface LayerRowProps {
   dotTone: 'emerald' | 'red' | 'amber' | 'purple';
@@ -43,6 +47,14 @@ export function LayerRow({ dotTone, name, count, layer }: LayerRowProps): JSX.El
 /** Default Layers card used by the right panel. */
 export function LayersCard(): JSX.Element {
   const showToast = useUIStore((s) => s.showToast);
+  const { data: railwayStations } = useRailwayStations();
+  const { data: metroStations } = useMetroStations();
+  const infrastructureCount = (railwayStations?.length ?? 0) + (metroStations?.length ?? 0);
+  const infrastructureCountLabel =
+    railwayStations == null && metroStations == null
+      ? '—'
+      : `${infrastructureCount.toLocaleString('he-IL')} מתקנים`;
+
   return (
     <Card>
       <CardHeader>
@@ -61,7 +73,12 @@ export function LayersCard(): JSX.Element {
         <LayerRow dotTone="emerald" name="תחבורה ציבורית" count="342 קווים פעילים" layer="transit" />
         <LayerRow dotTone="red" name="תאונות דרכים" count="2,847 רשומות" layer="accidents" />
         <LayerRow dotTone="amber" name="רשת כבישים" count="1,205 ק״מ" layer="roads" />
-        <LayerRow dotTone="purple" name="תשתיות" count="89 מתקנים" layer="infrastructure" />
+        <LayerRow
+          dotTone="purple"
+          name="תשתיות"
+          count={infrastructureCountLabel}
+          layer="infrastructure"
+        />
       </div>
     </Card>
   );

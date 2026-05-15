@@ -39,15 +39,26 @@ const TABS: Record<LayerKey, TabMeta> = {
   },
 };
 
-const TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
+const LAYER_TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
+
+function tabButtonClass(isActive: boolean): string {
+  return cn(
+    'flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all',
+    isActive
+      ? 'bg-gradient-to-br from-brand-teal to-brand-teal2 font-semibold text-white shadow-[0_4px_14px_rgba(76,175,80,0.4)]'
+      : 'text-text-dim hover:text-text'
+  );
+}
+
+function dotRingClass(isActive: boolean): string {
+  return cn(
+    'h-2 w-2 rounded-full ring-offset-1 transition-all',
+    isActive ? 'ring-2 ring-bg-1/80 ring-offset-brand-teal' : 'ring-1 ring-white/15 ring-offset-bg-2'
+  );
+}
 
 /**
- * Pill-shaped tab strip that picks **one** domain at a time on the map.
- *
- * Each tab now carries a dot in the *exact same color* its markers use on the
- * map (so the strip doubles as a quick-glance legend), plus a Hebrew `title`
- * tooltip describing what that color means. Active tab gets a soft ring around
- * the dot for emphasis without losing the category color.
+ * Pill-shaped tab strip: **הכל** shows every layer; otherwise exactly one domain.
  */
 export function LayerToggle(): JSX.Element {
   const activeDomain = useMapStore((s) => s.activeDomain);
@@ -59,7 +70,19 @@ export function LayerToggle(): JSX.Element {
       role="tablist"
       aria-label="שכבות מפה"
     >
-      {TAB_ORDER.map((tab) => {
+      <button
+        type="button"
+        role="tab"
+        onClick={() => setActiveDomain('all')}
+        aria-pressed={activeDomain === 'all'}
+        aria-selected={activeDomain === 'all'}
+        title="הצג את כל השכבות"
+        className={tabButtonClass(activeDomain === 'all')}
+      >
+        הכל
+      </button>
+
+      {LAYER_TAB_ORDER.map((tab) => {
         const meta = TABS[tab];
         const dotColor = LAYER_COLORS[meta.colorKey];
         const isActive = activeDomain === tab;
@@ -72,21 +95,11 @@ export function LayerToggle(): JSX.Element {
             aria-pressed={isActive}
             aria-selected={isActive}
             title={meta.description}
-            className={cn(
-              'flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all',
-              isActive
-                ? 'bg-gradient-to-br from-brand-teal to-brand-teal2 font-semibold text-white shadow-[0_4px_14px_rgba(76,175,80,0.4)]'
-                : 'text-text-dim hover:text-text'
-            )}
+            className={tabButtonClass(isActive)}
           >
             <span
               aria-hidden
-              className={cn(
-                'h-2 w-2 rounded-full ring-offset-1 transition-all',
-                isActive
-                  ? 'ring-2 ring-bg-1/80 ring-offset-brand-teal'
-                  : 'ring-1 ring-white/15 ring-offset-bg-2'
-              )}
+              className={dotRingClass(isActive)}
               style={{
                 backgroundColor: dotColor,
                 boxShadow: `0 0 8px ${dotColor}66`,

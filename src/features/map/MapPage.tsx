@@ -10,9 +10,11 @@ import { LayerToggle } from '@/components/map/LayerToggle';
 export function MapPage(): JSX.Element {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3 p-3.5">
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex w-full min-w-0 shrink-0 items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <MapSearch />
+        </div>
         <LayerToggle />
-        <MapSearch />
         <MapTypeSelector />
       </div>
       <div className="flex-1 animate-fadein">
