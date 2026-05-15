@@ -1,5 +1,20 @@
 # Data Sources
 
+## הסוכן החכם — מי בעצם מעדכן את כל המקורות שלמטה?
+
+כל המקורות בעמוד הזה (תאונות, ספירות תנועה, תחנות רכבת) מתעדכנים אוטומטית פעם בחודש על ידי **הסוכן החכם** — Edge Function בשם `supabase/functions/update-agent` יחד עם תזמון `pg_cron` שמוגדר במיגרציה `20260522000000_cron_update_agent_monthly.sql`.
+
+**הזרימה בפשטות:**
+
+1. ב-1 לכל חודש בשעה 03:00 UTC, `pg_cron` שולח `POST` ל-Edge Function עם header `x-trigger: cron`.
+2. הפונקציה רצה על כל מקור פעיל בטבלת `data_sources` ועוברת על שלושה שלבים פר מקור:
+   - **בדיקה** — קוראת ל-CKAN של data.gov.il רק את ה-metadata, ומשווה את `last_modified` למה ששמור ב-DB. אם זהה — דילוג.
+   - **משיכה ופענוח** — אם השתנה, מורידה את ה-CSV/SHP, מפענחת אותו בזיכרון (אין שמירת קבצים).
+   - **כתיבה ל-Postgres** — `UPSERT` לטבלת היעד עם המפתח הטבעי של המקור (`pk_teuna_fikt`, `count_id`, `station_id` וכו'), כך ששורה קיימת מתעדכנת במקום שתשוכפל.
+3. הפונקציה מתחזקת גם שתי טבלאות מטא: `update_log` (שורה לכל ריצה, עם status ומונים) ו-`data_sources` (תאריך הבדיקה האחרונה והגרסה האחרונה שראינו).
+
+**הרצה ידנית** נשארת פתוחה: אפשר לקרוא ל-`POST .../functions/v1/update-agent` באמצעות `?force=true` כדי לעקוף את בדיקת השינוי, או עם `?source=accidents` כדי להריץ מקור יחיד. הסבר טכני מפורט יותר נמצא ב-`docs/DECISIONS.md` תחת "הסוכן החכם".
+
 ## GTFS Public Transportation
 
 - Source: https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip

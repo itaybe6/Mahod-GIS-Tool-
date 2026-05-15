@@ -333,7 +333,7 @@ function buildFallbackSvg(rings: PolygonRing[], bbox: Bbox, areaKm2: number): st
     .join(' ');
   const areaLabel = Number.isFinite(areaKm2) ? `${areaKm2.toFixed(2)} קמ״ר` : '';
   const coordLabel = `${fmtCoord(centerLat)}°N, ${fmtCoord(centerLng)}°E`;
-  return `<svg viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="מפת אזור הניתוח (ללא רקע OSM)">
+  return `<svg width="${VIEW_W}" height="${VIEW_H}" viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="מפת אזור הניתוח (ללא רקע OSM)">
   <defs>
     <linearGradient id="mahod-poly-fill" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a6fb5" stop-opacity="0.22"/>
@@ -449,7 +449,7 @@ export async function buildPolygonMapSvg(
   const coordLabel = `${fmtCoord(centerLat)}°N, ${fmtCoord(centerLng)}°E`;
   const attribution = '© OpenStreetMap contributors';
 
-  return `<svg viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="מפת אזור הניתוח על רקע OpenStreetMap">
+  return `<svg width="${VIEW_W}" height="${VIEW_H}" viewBox="0 0 ${VIEW_W} ${VIEW_H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="מפת אזור הניתוח על רקע OpenStreetMap">
   <defs>
     <clipPath id="mahod-map-clip"><rect x="0" y="0" width="${VIEW_W}" height="${VIEW_H}"/></clipPath>
   </defs>

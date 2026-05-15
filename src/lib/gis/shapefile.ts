@@ -7,8 +7,9 @@ import {
 } from './projections';
 
 /**
- * Anything we can ingest from the user: a single `.zip`, or the loose set of
- * shapefile siblings (`.shp` + `.dbf` + optional `.prj` / `.cpg` / `.shx`).
+ * Anything we can ingest from the user: a single `.zip`, a standalone `.shp`,
+ * or the loose set of shapefile siblings (`.shp` + optional `.dbf` / `.prj` /
+ * `.cpg` / `.shx`).
  *
  * Using only client-side parsing (shpjs) is a deliberate choice — see
  * `docs/DECISIONS.md` (`Client-Side Shapefile Parsing`).
@@ -294,7 +295,7 @@ async function sniffFileKind(
  * Accepts (in priority order):
  *   1. A single `.zip` containing the shapefile bundle (preferred for SHP).
  *   2. A single `.geojson` / `.json` file.
- *   3. The loose siblings (`.shp` + `.dbf` + optional `.prj` / `.cpg`).
+ *   3. The loose siblings (`.shp` + optional `.dbf` / `.prj` / `.cpg`).
  *
  * Files with no extension are sniffed by magic bytes so the user can drop a
  * raw export straight from a CLI without renaming first.
@@ -343,23 +344,19 @@ export async function parseShapefileFromFiles(
     return finalize(fc, gjFile.name);
   }
 
-  // Path C — sibling files. Need at least .shp + .dbf for shpjs to compose features.
+  // Path C — sibling files. `.shp` carries geometry by itself; `.dbf` only
+  // enriches features with attributes when the user provides it.
   if (siblings.shp) {
-    if (!siblings.dbf) {
-      throw new ShapefileParseError(
-        'MISSING_SIBLINGS',
-        'חסר קובץ .dbf לצד ה-.shp (חובה כדי לפרסר את התכונות).'
-      );
-    }
     let result: ShpjsResult;
     try {
       const [shp, dbf, prj, cpg] = await Promise.all([
         fileToArrayBuffer(siblings.shp),
-        fileToArrayBuffer(siblings.dbf),
+        siblings.dbf ? fileToArrayBuffer(siblings.dbf) : Promise.resolve(undefined),
         siblings.prj ? siblings.prj.text() : Promise.resolve(undefined),
         siblings.cpg ? siblings.cpg.text() : Promise.resolve(undefined),
       ]);
-      const bundle: Parameters<typeof getShapefile>[0] = { shp, dbf };
+      const bundle: Parameters<typeof getShapefile>[0] = { shp };
+      if (dbf) (bundle as { dbf?: ArrayBuffer }).dbf = dbf;
       if (typeof prj === 'string') (bundle as { prj?: string }).prj = prj;
       if (typeof cpg === 'string') (bundle as { cpg?: string }).cpg = cpg;
       result = await getShapefile(bundle);
@@ -376,13 +373,13 @@ export async function parseShapefileFromFiles(
   if (unknown.length > 0) {
     throw new ShapefileParseError(
       'UNSUPPORTED_TYPE',
-      `סוג קובץ לא נתמך (${unknown.map((f) => f.name).join(', ')}). יש להעלות .zip / .geojson / .shp+.dbf.`
+      `סוג קובץ לא נתמך (${unknown.map((f) => f.name).join(', ')}). יש להעלות .zip / .geojson / .shp.`
     );
   }
 
   throw new ShapefileParseError(
     'EMPTY_INPUT',
-    'לא נמצא קובץ נתמך (.zip / .geojson / .shp + .dbf).'
+    'לא נמצא קובץ נתמך (.zip / .geojson / .shp).'
   );
 }
 

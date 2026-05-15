@@ -15,8 +15,8 @@ export interface DropzoneProps {
 const ACCEPTED = '.zip,.shp,.dbf,.shx,.prj,.cpg,.geojson,.json';
 
 /**
- * Drag-and-drop / click target that ingests a shapefile bundle (single `.zip`
- * or the loose `.shp` + `.dbf` siblings) and routes it through
+ * Drag-and-drop / click target that ingests a shapefile bundle (single `.zip`,
+ * standalone `.shp`, or loose shapefile siblings) and routes it through
  * `useShapefileUpload` — which parses with shpjs and stores the WGS84 GeoJSON
  * in `useUploadStore` for the map components to render.
  */
@@ -107,7 +107,7 @@ export function Dropzone({ onFiles, className }: DropzoneProps): JSX.Element {
         {isParsing ? 'מעבד את הקובץ...' : 'גרור קבצים לכאן או לחץ לבחירה'}
       </div>
       <div className="font-mono text-[11px] text-text-faint">
-        .zip / .geojson / .shp + .dbf (+ .prj)
+        .zip / .geojson / .shp (+ .dbf / .prj)
       </div>
     </div>
   );

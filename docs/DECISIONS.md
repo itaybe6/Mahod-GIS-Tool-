@@ -129,3 +129,22 @@ Leaflet, שמשמש כמנוע המפה הראשי (DARK / OSM / SAT / TOPO), ל
 **Client contract:** The browser calls `POST …/functions/v1/export-reports` with `{ format, polygon, layers, analysis? }`. `analysis` is a compact `ExportAnalysisPayload` built from `useAnalysisStore` + polygon metadata (`buildExportAnalysisPayload`, including `@turf/area` for polygon km²).
 
 **מיקום ב-UI:** אין פריט תפריט צדדי לייצוא ואין דף ייעודי; כרטיס הייצוא (`ExportPanel`) יושב בפאנל הימני **מתחת לכרטיס "שכבות מידע"**. נתיב ישן `/export` מפנה לדשבורד (`/`) לסימניות קיימות.
+
+## הסוכן החכם — עדכון אוטומטי חודשי מ-data.gov.il
+
+**מה זה?** "הסוכן החכם" הוא ה-Edge Function `supabase/functions/update-agent`. הוא יודע למשוך לבד את מערכי הנתונים הפתוחים של ממשלת ישראל (תאונות `accid_taz`, ספירות תנועה `vehicle_counts`, תחנות רכבת `rail_stat`) ולעדכן את הטבלאות ב-Supabase — בלי שמישהו ילחץ על כפתור.
+
+**איך הוא רץ?** מיגרציה `20260522000000_cron_update_agent_monthly.sql` מתקינה את ההרחבות `pg_cron` ו-`pg_net` ויוצרת תזמון בשם `update-agent-monthly` שרץ ב-1 לכל חודש בשעה 03:00 UTC. Postgres עצמו שולח בקשת `POST` ל-Edge Function עם header `x-trigger: cron`, וה-Function מתעוררת ועושה את שאר העבודה.
+
+**איך נמנעות כפילויות?** שני שלבים:
+
+1. **ברמת הקובץ** — לפני הורדה, הסוכן שואל את CKAN מתי הקובץ עודכן לאחרונה ומשווה ל-`data_sources.last_modified`. אם זה אותו תאריך — דילוג מלא, ה-status הופך ל-`skipped`.
+2. **ברמת השורה** — כל אדפטר עושה `UPSERT` עם `onConflict` על המפתח הטבעי של אותו דאטה: `pk_teuna_fikt` בתאונות, `count_id` בספירות, `station_id` בתחנות רכבת, `code` בסוגי רכב. כך שורה קיימת מתעדכנת במקום שתשוכפל. החריג היחיד הוא `traffic_count_volumes` (מדידות שעתיות בלי מפתח טבעי) — שם הסוכן מוחק ומכניס מחדש את כל השורות של אותה ספירה.
+
+**מה נשמר היכן?** הסוכן לא שומר כלום בדיסק (זה Deno, אין filesystem) ולא ב-Storage. הוא מוריד את ה-CSV/SHP מ-CKAN לזיכרון, מפענח, וכותב ישירות לטבלאות Postgres (`accidents`, `traffic_*`, `infra_railway_stations`). בנוסף הוא מתחזק שתי טבלאות ניהול: `update_log` (שורה לכל ריצה עם status ומונים) ו-`data_sources` (last_checked_at, last_modified). הצעד הזה הוא קריטי כי הוא מה שמאפשר את בדיקת השינוי בריצה הבאה.
+
+**הרצה ידנית** עדיין אפשרית: `POST .../functions/v1/update-agent` (manual), עם `?force=true` כדי לדלג על בדיקת השינוי, או עם `?source=traffic_counts` כדי להריץ מקור אחד בלבד. ה-cron החודשי הוא רק "ברירת מחדל" — הוא לא חוסם הפעלות ידניות.
+
+**למה חודשי ולא יומי?** מערכי הנתונים שעל הפרק (תאונות LMS, ספירות תנועה) מתפרסמים במחזור חודשי. הרצה תכופה יותר תיצור עומס מיותר על ה-DB ועל data.gov.il בלי להביא ערך מוסף — בדיקת ה-`last_modified` תזהה שאין שינוי ותדלג, אבל הקריאה ל-CKAN עצמה כבר התבזבזה. אם בעתיד יתווסף מקור עם תדירות שונה, אפשר להוסיף תזמון נפרד עם `cron.schedule` נוסף, או להגדיר תדירות לכל מקור ב-`data_sources.metadata`.
+
+**הגדרה חד-פעמית.** המיגרציה מצפה לשני סודות ב-`supabase_vault`: `project_url` ו-`service_role_key`. צריך להזין אותם פעם אחת ב-SQL Editor (יש דוגמה בקובץ המיגרציה עצמו). הסיבה: לא רוצים את ה-service-role key בקוד שיושב ב-git.

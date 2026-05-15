@@ -92,6 +92,29 @@ export async function renderReportHtml(
     line-height: 1.6;
     font-size: 13px;
     direction: rtl;
+    background: #eef2f6;
+    padding: 24px;
+  }
+
+  .report-page {
+    width: min(100%, 820px);
+    margin: 0 auto;
+    padding: 28px;
+    background: #ffffff;
+    box-shadow: 0 8px 28px rgba(31, 41, 51, 0.12);
+  }
+
+  @media print {
+    body {
+      background: #ffffff;
+      padding: 0;
+    }
+    .report-page {
+      width: auto;
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
+    }
   }
 
   .header {
@@ -204,7 +227,8 @@ export async function renderReportHtml(
   }
 
   .map-card {
-    margin: 12px 0;
+    max-width: 600px;
+    margin: 12px auto 18px;
     padding: 8px;
     background: #ffffff;
     border: 1px solid #e5e9ef;
@@ -216,12 +240,14 @@ export async function renderReportHtml(
     display: block;
     width: 100%;
     height: auto;
+    max-height: 320px;
   }
 
   .page-break { page-break-before: always; }
 </style>
 </head>
 <body>
+<main class="report-page">
 
 <div class="header">
   <h1>דוח ניתוח GIS תחבורתי</h1>
@@ -294,6 +320,7 @@ ${mapSection}
   <strong>מהוד הנדסה בע״מ</strong> · מערכת GIS תחבורתית · ${formatDate(data.metadata.analyzedAt)}
 </div>
 
+</main>
 </body>
 </html>`;
 }
