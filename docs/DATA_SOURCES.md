@@ -70,6 +70,11 @@
 
 - מקור: [data.gov.il — ministry_of_transport / lrt_stat](https://data.gov.il/he/datasets/ministry_of_transport/lrt_stat)
 - הערה: מערך הנתונים הרשמי של משרד התחבורה בפורטל data.gov.il לתשתיות הרכבת הקלה; לפרטי שדות, עדכונים וקבצי הורדה יש לעיין בעמוד המקור.
+- **משיכה אוטומטית:** הסוכן החכם (`supabase/functions/update-agent/adapters/lrt.ts`) מוריד פעם בחודש את `LRT_STAT_CSV` ו-`LRT_STAT_SHP` מ-CKAN, מפענח את ה-shapefile עם `shpjs` (כולל reprojection אוטומטי מ-ITM ל-WGS84), וכותב את הנקודות לטבלה `public.infra_metro_stations` (אותה טבלה שמשמשת גם למטרו עתידי). מפתח ה-UPSERT הוא `station_id` עם prefix `lrt_` כדי שלא יהיה התנגשות עם מזהים של מטרו בעתיד.
+- **שתי סכמות נתמכות:** קובץ ה-lrt_stat מתפרסם בשתי גרסאות שונות לאורך השנים. הסוכן מזהה לבד באיזו סכמה מדובר ופועל בהתאם:
+  1. **`rail_asset`** — שדות `ASSET_NO` + `NAME` (כמו ב-rail_stat); `station_id` נבנה מ-`lrt_<ASSET_NO>`.
+  2. **`lrt_entrance`** — שדות `STAT_NAME` + `ENTRC_LBL` (כניסות לתחנה, אין מזהה יציב במקור); `station_id` נבנה כ-`lrt_e_<SHA-256 של LINE|STAT_NAME|ENTRC_LBL|lon|lat>` כדי שאותה כניסה תקבל את אותו מזהה בכל ריצה.
+- **תצוגה במפה:** הנקודות שנטענו כאן מופיעות יחד עם תחנות הרכבת הכבדה ב-RPC `query_infra_in_polygon` תחת `category='metro_station'`.
 
 ## Road accidents — CBS TAZ aggregate (`accid_taz` / accid_taz.csv)
 

@@ -148,3 +148,14 @@ Leaflet, שמשמש כמנוע המפה הראשי (DARK / OSM / SAT / TOPO), ל
 **למה חודשי ולא יומי?** מערכי הנתונים שעל הפרק (תאונות LMS, ספירות תנועה) מתפרסמים במחזור חודשי. הרצה תכופה יותר תיצור עומס מיותר על ה-DB ועל data.gov.il בלי להביא ערך מוסף — בדיקת ה-`last_modified` תזהה שאין שינוי ותדלג, אבל הקריאה ל-CKAN עצמה כבר התבזבזה. אם בעתיד יתווסף מקור עם תדירות שונה, אפשר להוסיף תזמון נפרד עם `cron.schedule` נוסף, או להגדיר תדירות לכל מקור ב-`data_sources.metadata`.
 
 **הגדרה חד-פעמית.** המיגרציה מצפה לשני סודות ב-`supabase_vault`: `project_url` ו-`service_role_key`. צריך להזין אותם פעם אחת ב-SQL Editor (יש דוגמה בקובץ המיגרציה עצמו). הסיבה: לא רוצים את ה-service-role key בקוד שיושב ב-git.
+
+### LRT — תמיכה בשתי סכמות באותו adapter
+
+האדפטר `adapters/lrt.ts` נוסף בעקבות פיצול בפורמט של `lrt_stat` ב-data.gov.il לאורך השנים. במקום שני adapters נפרדים בחרנו לבנות אדפטר אחד שמזהה לבד באיזו סכמה מדובר ועובד איתה:
+
+1. **`rail_asset`** — שדות `ASSET_NO` + `NAME`, אותה צורה כמו `rail_stat`. נמשך מהשורה ב-CSV באמצעות `ASSET_NO`.
+2. **`lrt_entrance`** — שדות `STAT_NAME` + `ENTRC_LBL` (כניסות לתחנות). אין `ASSET_NO`, אז מדלגים על ה-CSV ומשתמשים רק ב-attributes שבתוך ה-SHP.
+
+הבעיה ב-`lrt_entrance`: אין מזהה טבעי. אם פשוט נשים `station_id` לפי `STAT_NAME`, כל כניסה תדרוס את הקודמת, וגם בריצה הבאה כל כניסה תקבל ID אחר. הפתרון: מזהה דטרמיניסטי דרך **SHA-256 של `(LINE | STAT_NAME | ENTRC_LBL | lon | lat)`** (20 תווים הקסה ראשונים, עם prefix `lrt_e_`). כך אותה כניסה תקבל את אותו `station_id` בכל ריצה, ה-UPSERT עובד נכון, ואין כפילויות בין ריצות. תוך-batch אנחנו עוטפים גם ב-`dedupeByStationId` כי לפעמים יש שתי שורות SHP זהות שיתנגשו על אותו ID באותה ריצה (`ON CONFLICT DO UPDATE cannot affect row a second time`).
+
+האדפטר כותב לטבלה `infra_metro_stations` (אותה טבלה שמשמשת לתחנות מטרו עתידיות) — לא ל-`infra_railway_stations`, כי הסכמה שונה (TEXT primary key ולא INTEGER, אין `metadata`/`is_active`). בריצה הראשונה, יש להריץ גם את המיגרציה `20260522010000_data_sources_seed_lrt.sql` שמכניסה את שורת ה-`lrt` לטבלת `data_sources` (היא לא הייתה ב-seed המקורי).
