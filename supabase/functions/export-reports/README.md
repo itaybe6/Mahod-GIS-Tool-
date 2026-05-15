@@ -1,6 +1,6 @@
 # `export-reports` Edge Function
 
-ייצוא **GeoJSON** (מיזוג שכבות מה-RPC הקיימים), **CSV** (טבלה UTF-8 עם BOM), **HTML** (דוח RTL בעברית), ו-**PDF** (`pdf-lib` + גופן Noto Sans Hebrew — ללא Puppeteer).
+ייצוא **GeoJSON** (מיזוג שכבות מה-RPC הקיימים), **CSV** (טבלה UTF-8 עם BOM) ו-**HTML** (דוח RTL בעברית).
 
 ## פריסה
 
@@ -14,14 +14,14 @@ supabase functions deploy export-reports --project-ref <project-id>
 
 ```jsonc
 {
-  "format": "geojson", // או "csv" | "html" | "pdf"
-  "polygon": { "type": "FeatureCollection", ... },
+  "format": "geojson", // או "csv" | "html"
+  "polygon": { "type": "FeatureCollection", ... }, // נדרש ל-geojson
   "layers": {
     "publicTransport": true,
     "accidents": true,
     "roads": false
-  },
-  "analysis": { ... } // נדרש ל-csv, html ו-pdf — אותו מבנה כמו `ExportAnalysisPayload` בקליינט
+  }, // נדרש ל-geojson (לפחות שכבה אחת = true)
+  "analysis": { ... } // נדרש ל-csv ול-html — אותו מבנה כמו `ExportAnalysisPayload` בקליינט
 }
 ```
 
@@ -29,6 +29,6 @@ supabase functions deploy export-reports --project-ref <project-id>
 
 ## הערות
 
-- **GeoJSON:** כל פיצ'ר מקבל `properties.layer` = `gtfs_stop` | `accident` | `road`.
-- **HTML:** דוח RTL מלא; נטען כקובץ מצורף או נפתח בדפדפן.
-- **PDF:** דורש הורדת גופן מ-jsDelivr בזמן ריצה; אם הרשת חוסמת, תוחזר שגיאה 500 עם הודעה בעברית.
+- **GeoJSON:** דורש `polygon` + `layers` + הגדרות Supabase (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). כל פיצ'ר מקבל `properties.layer` = `gtfs_stop` | `accident` | `road`. אם חלק מהשכבות נכשלו, הצלחות חלקיות מוחזרות והכותרת `X-Export-Warnings` תכיל את השגיאות.
+- **CSV:** דורש רק `analysis`. הקובץ כולל BOM כדי שאקסל יזהה UTF-8 נכון.
+- **HTML:** דורש רק `analysis`. דוח RTL מלא; נטען כקובץ מצורף או נפתח בדפדפן.

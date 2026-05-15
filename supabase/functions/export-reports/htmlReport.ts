@@ -1,4 +1,5 @@
 import type { ReportData } from './types.ts';
+import { buildPolygonMapSvg } from './mapSvg.ts';
 
 function escapeHtml(s: string | null | undefined): string {
   if (s == null) return '';
@@ -10,7 +11,7 @@ function escapeHtml(s: string | null | undefined): string {
     .replace(/'/g, '&#39;');
 }
 
-export function renderReportHtml(data: ReportData): string {
+export function renderReportHtml(data: ReportData, polygonGeometry?: unknown): string {
   const formatNumber = (n: number) => n.toLocaleString('he-IL');
   const formatKm = (meters: number) => (meters / 1000).toFixed(2);
   const formatDate = (iso: string) => {
@@ -54,6 +55,16 @@ export function renderReportHtml(data: ReportData): string {
           data.publicTransport.routesServingSum
         )}</div>`
       : '';
+
+  const mapSvg = buildPolygonMapSvg(polygonGeometry, data.metadata.polygonAreaKm2);
+  const mapSection = mapSvg
+    ? `
+<h2>תצוגה ויזואלית של אזור הניתוח</h2>
+<div class="map-card">
+  ${mapSvg}
+</div>
+`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -184,6 +195,21 @@ export function renderReportHtml(data: ReportData): string {
     color: #6b7785;
   }
 
+  .map-card {
+    margin: 12px 0;
+    padding: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e9ef;
+    border-radius: 8px;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+  .map-card svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
   .page-break { page-break-before: always; }
 </style>
 </head>
@@ -218,7 +244,7 @@ export function renderReportHtml(data: ReportData): string {
     <div class="kpi-label">ק״מ דרכים (חיתוך)</div>
   </div>
 </div>
-
+${mapSection}
 <h2>תאונות דרכים - פילוח חומרה (פציעות)</h2>
 <div class="severity-grid">
   <div class="severity-card severity-fatal">

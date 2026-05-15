@@ -4,7 +4,6 @@ import { extractPolygonGeometry } from './polygon.ts';
 import { mergeLayerGeoJson } from './geojsonMerge.ts';
 import { renderReportCsv } from './csvReport.ts';
 import { renderReportHtml } from './htmlReport.ts';
-import { generateReportPdf } from './pdfReport.ts';
 import type { ReportData } from './types.ts';
 
 const CORS_HEADERS = {
@@ -13,6 +12,8 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 };
+
+type ExportFormat = 'geojson' | 'csv' | 'html';
 
 interface LayerFlags {
   publicTransport: boolean;
@@ -142,26 +143,7 @@ function parseReportData(v: unknown): ReportData {
   };
 }
 
-serve(async (req: Request): Promise<Response> => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-
-  let body: RequestBody;
-  try {
-    body = (await req.json()) as RequestBody;
-  } catch {
-    return jsonResponse({ error: 'Body חייב להיות JSON תקין' }, 400);
-  }
-
-  const format = body.format;
-  if (format !== 'geojson' && format !== 'csv' && format !== 'html' && format !== 'pdf') {
-    return jsonResponse({ error: 'format חייב להיות geojson, csv, html או pdf' }, 400);
-  }
-
+async function handleGeoJson(body: RequestBody): Promise<Response> {
   let polygonGeometry: object;
   try {
     polygonGeometry = extractPolygonGeometry(body.polygon);
@@ -189,41 +171,41 @@ serve(async (req: Request): Promise<Response> => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const polygonText = JSON.stringify(polygonGeometry);
 
-  if (format === 'geojson') {
-    const settled = await Promise.allSettled(
-      wanted.map(async (w) => {
-        const { data, error } = await supabase.rpc(w.rpc, { polygon_geojson: polygonText });
-        if (error) throw new Error(`${w.rpc}: ${error.message}`);
-        return { layer: w.exportLayer, envelope: data };
-      })
-    );
+  const settled = await Promise.allSettled(
+    wanted.map(async (w) => {
+      const { data, error } = await supabase.rpc(w.rpc, { polygon_geojson: polygonText });
+      if (error) throw new Error(`${w.rpc}: ${error.message}`);
+      return { layer: w.exportLayer, envelope: data };
+    })
+  );
 
-    const layerResults: Array<{ layer: string; envelope: unknown }> = [];
-    const errs: string[] = [];
-    for (let i = 0; i < settled.length; i += 1) {
-      const out = settled[i]!;
-      if (out.status === 'fulfilled') {
-        layerResults.push(out.value);
-      } else {
-        errs.push(out.reason instanceof Error ? out.reason.message : String(out.reason));
-      }
+  const layerResults: Array<{ layer: string; envelope: unknown }> = [];
+  const errs: string[] = [];
+  for (let i = 0; i < settled.length; i += 1) {
+    const out = settled[i]!;
+    if (out.status === 'fulfilled') {
+      layerResults.push(out.value);
+    } else {
+      errs.push(out.reason instanceof Error ? out.reason.message : String(out.reason));
     }
-    if (layerResults.length === 0) {
-      return jsonResponse({ error: 'כל השכבות נכשלו', details: errs }, 502);
-    }
-
-    const fc = mergeLayerGeoJson(layerResults);
-    const filename = asciiFilename('geojson');
-    return new Response(JSON.stringify(fc), {
-      headers: {
-        ...CORS_HEADERS,
-        'Content-Type': 'application/geo+json; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        ...(errs.length > 0 ? { 'X-Export-Warnings': errs.join(' | ') } : {}),
-      },
-    });
+  }
+  if (layerResults.length === 0) {
+    return jsonResponse({ error: 'כל השכבות נכשלו', details: errs }, 502);
   }
 
+  const fc = mergeLayerGeoJson(layerResults);
+  const filename = asciiFilename('geojson');
+  return new Response(JSON.stringify(fc), {
+    headers: {
+      ...CORS_HEADERS,
+      'Content-Type': 'application/geo+json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      ...(errs.length > 0 ? { 'X-Export-Warnings': errs.join(' | ') } : {}),
+    },
+  });
+}
+
+function handleSummary(format: 'csv' | 'html', body: RequestBody): Response {
   let report: ReportData;
   try {
     report = parseReportData(body.analysis);
@@ -243,29 +225,48 @@ serve(async (req: Request): Promise<Response> => {
     });
   }
 
-  if (format === 'html') {
-    const html = renderReportHtml(report);
-    const filename = asciiFilename('html');
-    return new Response(html, {
-      headers: {
-        ...CORS_HEADERS,
-        'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    });
+  // HTML: polygon is optional — used only for the inline SVG map. If missing or
+  // malformed we degrade gracefully and just skip the visualization section.
+  let polygonGeometry: object | undefined;
+  try {
+    polygonGeometry = extractPolygonGeometry(body.polygon);
+  } catch {
+    polygonGeometry = undefined;
   }
 
-  try {
-    const bytes = await generateReportPdf(report);
-    const filename = asciiFilename('pdf');
-    return new Response(bytes, {
-      headers: {
-        ...CORS_HEADERS,
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    });
-  } catch (err) {
-    return jsonResponse({ error: (err as Error).message }, 500);
+  const html = renderReportHtml(report, polygonGeometry);
+  const filename = asciiFilename('html');
+  return new Response(html, {
+    headers: {
+      ...CORS_HEADERS,
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    },
+  });
+}
+
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'Method not allowed' }, 405);
+  }
+
+  let body: RequestBody;
+  try {
+    body = (await req.json()) as RequestBody;
+  } catch {
+    return jsonResponse({ error: 'Body חייב להיות JSON תקין' }, 400);
+  }
+
+  const format = body.format as ExportFormat | undefined;
+  if (format !== 'geojson' && format !== 'csv' && format !== 'html') {
+    return jsonResponse({ error: 'format חייב להיות geojson, csv או html' }, 400);
+  }
+
+  if (format === 'geojson') {
+    return handleGeoJson(body);
+  }
+  return handleSummary(format, body);
 });

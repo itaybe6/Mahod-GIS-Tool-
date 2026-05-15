@@ -20,6 +20,7 @@ export interface RailwayStation {
 export interface MetroStation {
   stationId: string;
   name: string;
+  lineId: string | null;
   status: MetroStationStatus;
   /** `[lat, lng]` — Leaflet order. Use `toMapboxLngLat` for Mapbox GL. */
   position: LatLngTuple;
@@ -52,6 +53,7 @@ async function fetchMetroStations(): Promise<MetroStation[]> {
   return data.map((row) => ({
     stationId: row.station_id,
     name: row.station_name,
+    lineId: row.line_id,
     status: row.status,
     position: [row.lat, row.lon],
   }));

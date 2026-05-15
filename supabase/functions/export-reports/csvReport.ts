@@ -10,7 +10,7 @@ function row(cells: string[]): string {
   return cells.map(escapeCsvCell).join(',');
 }
 
-/** Flat UTF-8 CSV (with BOM) for spreadsheets — same logical data as the PDF summary. */
+/** Flat UTF-8 CSV (with BOM) for spreadsheets — same logical data as the HTML summary. */
 export function renderReportCsv(data: ReportData): string {
   const lines: string[] = [];
   const fmt = (n: number) => n.toLocaleString('he-IL');

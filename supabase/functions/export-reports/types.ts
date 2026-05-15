@@ -1,4 +1,4 @@
-/** Payload for CSV/HTML/PDF summary (matches client `ExportAnalysisPayload`). */
+/** Payload for CSV/HTML summary (matches client `ExportAnalysisPayload`). */
 export interface ReportData {
   metadata: {
     polygonName?: string;

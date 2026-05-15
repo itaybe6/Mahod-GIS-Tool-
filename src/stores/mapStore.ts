@@ -68,7 +68,7 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  mapType: 'dark',
+  mapType: 'mapbox3d',
   activeLayers: allLayersEnabled(),
   activeDomain: 'all',
   focusRequest: null,
