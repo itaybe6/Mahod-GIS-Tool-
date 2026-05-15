@@ -23,6 +23,7 @@ type AuthGate = 'checking' | 'allowed' | 'denied';
 export function RecentFilesPage(): JSX.Element {
   const navigate = useNavigate();
   const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+  const isGuest = useAuthStore((s) => s.isGuest);
   const showToast = useUIStore((s) => s.showToast);
   const [authGate, setAuthGate] = useState<AuthGate>('checking');
   const [rows, setRows] = useState<UserSavedFilesRow[]>([]);
@@ -73,6 +74,12 @@ export function RecentFilesPage(): JSX.Element {
       }
 
       if (!session) {
+        if (isGuest) {
+          setAuthGate('allowed');
+          setRows([]);
+          setLoading(false);
+          return;
+        }
         setAuthenticated(false);
         setAuthGate('denied');
         navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.RECENT_FILES } });
@@ -87,7 +94,7 @@ export function RecentFilesPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [navigate, load, setAuthenticated]);
+  }, [navigate, load, setAuthenticated, isGuest]);
 
   const handleDownload = async (row: UserSavedFilesRow): Promise<void> => {
     setDownloadingId(row.id);
@@ -157,7 +164,16 @@ export function RecentFilesPage(): JSX.Element {
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-lg border border-border bg-bg-2/40 px-4 py-10 text-center text-sm text-text-dim">
-          עדיין לא הועלו קבצים. כשתעלה קבצים דרך האפליקציה והם יישמרו בטבלה, הם יופיעו כאן.
+          {isGuest ? (
+            <>
+              <p className="font-medium text-text">כניסה כאורח</p>
+              <p className="mt-2 leading-relaxed">
+                כדי לראות ולנהל קבצים שמורים בחשבון, התחבר דרך עמוד ההתחברות.
+              </p>
+            </>
+          ) : (
+            <>עדיין לא הועלו קבצים. כשתעלה קבצים דרך האפליקציה והם יישמרו בטבלה, הם יופיעו כאן.</>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">

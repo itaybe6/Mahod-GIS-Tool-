@@ -2,7 +2,63 @@
 
 Hebrew (RTL) GIS analysis tool for Israeli transportation data — built for Mahod Engineering.
 
-This is **iteration 1** of the project: a fully-scaffolded, type-strict React + TypeScript application with the complete dark-theme UI, routing, state management, and a working Leaflet map. Supabase wiring is intentionally deferred — see [`src/lib/supabase/README.md`](./src/lib/supabase/README.md).
+האפליקציה היא **React + TypeScript** (Vite) עם ממשק כהה מלא, ניתוב, מצב לקוח, מפת Leaflet, חיבור ל־**Supabase** (אימות, מסד נתונים, Edge Functions, Storage), וזרימות ניתוח וייצוא לפי אזור.
+
+---
+
+## מטרה
+
+כלי GIS לניתוח ולהצגת נתוני תחבורה בישראל, בשפה העברית ובכיוון RTL, עבור מהנדס מהוד. המערכת מאפשרת לעבוד עם מפה, שכבות מידע, ניתוח מרחבי (פוליגון), תכנון מסלולים חלקי (GTFS), ייצוא דוחות (GeoJSON, CSV, HTML, PDF), ומעקב אחר מקורות נתונים ועדכונים — הכל בממשק אחיד ונגיש גם בנייד.
+
+**יישום הדרישות:** כל סעיפי הפרויקט והמטלות יושמו במלואם. בנוסף נוסף **סעיף מקורי**: משתמש יכול **להירשם ולהתחבר**; לאחר התחברות, **קבצים שהמשתמש מעלה או שומר** נרשמים בצד השרת (Supabase) וניתנים **לשימוש חוזר** מאוחר יותר דרך מסך **«קבצים אחרונים»** — כך עובדה עם אותו חשבון נשמרת בין כניסות ולא נאבדת עם רענון הדפדפן בלבד.
+
+---
+
+## התקנה
+
+1. שכפול המאגר והכנסה לתיקיית הפרויקט (`mahod-gis`).
+2. התקנת תלויות:
+
+   ```bash
+   npm install
+   ```
+
+3. הגדרת משתני סביבה: העתקת תבנית הסביבה והזנת ערכים אמיתיים לפיתוח מקומי (בפרט חיבור Supabase — URL ו־anon key, וכל משתנה נוסף שבשימוש בפרויקט):
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. (אופציונלי) פריסת פונקציות Supabase, מיגרציות וסיד לפי הצורך — ראו תיעוד תחת `supabase/` וסקריפטי `npm run seed:*` להזנת GTFS בסדר התלות.
+
+---
+
+## הרצה
+
+**פיתוח מקומי** — שרת Vite עם HMR:
+
+```bash
+npm run dev
+```
+
+ברירת המחדל: `http://localhost:5173`.
+
+**בנייה לייצור ובדיקה מקומית של האריזה:**
+
+```bash
+npm run build
+npm run preview
+```
+
+פקודות נוספות: `npm run typecheck`, `npm run lint`, `npm run format` — ראו טבלת הסקריפטים בהמשך המסמך.
+
+---
+
+## אתר חי (Vercel)
+
+האתר הפרוס זמין בכתובת:
+
+**https://mahod-gis-tool-git-main-itay-ben-yair-s-projects.vercel.app/**
 
 ---
 
@@ -18,7 +74,7 @@ This is **iteration 1** of the project: a fully-scaffolded, type-strict React + 
 | Routing              | React Router v6                       |
 | Client state         | Zustand                               |
 | Server state         | TanStack React Query                  |
-| Data backend         | Supabase (`@supabase/supabase-js`) — placeholder client only |
+| Data backend         | Supabase (`@supabase/supabase-js`) — Auth, Postgres, Edge Functions, Storage |
 | Map                  | Leaflet + `react-leaflet`             |
 | Dates                | `date-fns`                            |
 | Validation           | Zod                                   |
@@ -48,12 +104,14 @@ This is **iteration 1** of the project: a fully-scaffolded, type-strict React + 
 # 1. install
 npm install
 
-# 2. copy env template (leave values blank — Supabase not wired yet)
+# 2. copy env template and fill VITE_SUPABASE_* (and any other vars you use)
 cp .env.example .env.local
 
 # 3. run dev server
 npm run dev          # → http://localhost:5173
 ```
+
+לסיכום בעברית של מטרה, התקנה והרצה — ראו את הסעיפים **מטרה**, **התקנה** ו־**הרצה** בראש המסמך, ואת **אתר חי (Vercel)** לכתובת הפריסה.
 
 ### Useful scripts
 

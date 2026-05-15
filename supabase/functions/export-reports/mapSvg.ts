@@ -275,13 +275,20 @@ function buildLegendSvg(features: MapLayerFeatures): string {
   items.push({ color: COLOR_POLYGON, label: 'אזור הניתוח', shape: 'line' });
   if (items.length === 0) return '';
 
-  const w = 200;
+  // Layout: swatch on the LEFT side of the row, label to its right.
+  // Using text-anchor="start" with default LTR direction renders the
+  // anchor point at the visual left edge of the text. The Hebrew label
+  // itself is still reordered R-to-L internally by the Unicode bidi
+  // algorithm so it remains readable. This avoids relying on the
+  // `direction` SVG attribute, which several browsers ignore on inline
+  // SVG and which was causing the labels to overflow the legend box.
+  const w = 210;
   const lineH = 18;
   const h = 14 + items.length * lineH;
   const x0 = 12;
   const y0 = 12;
-  const swatchCx = x0 + w - 18;
-  const textX = x0 + w - 30;
+  const swatchCx = x0 + 14;
+  const textX = x0 + 26;
   const rows = items
     .map((it, i) => {
       const cy = y0 + 24 + i * lineH;
@@ -289,7 +296,7 @@ function buildLegendSvg(features: MapLayerFeatures): string {
         it.shape === 'dot'
           ? `<circle cx="${swatchCx}" cy="${cy - 4}" r="4" fill="${it.color}" stroke="#ffffff" stroke-width="0.8"/>`
           : `<rect x="${swatchCx - 8}" y="${cy - 6}" width="16" height="3" fill="${it.color}"/>`;
-      return `${swatch}<text x="${textX}" y="${cy}" text-anchor="start" direction="rtl" font-size="11" fill="#1f2933">${escapeXml(it.label)}</text>`;
+      return `${swatch}<text x="${textX}" y="${cy}" text-anchor="start" font-size="11" fill="#1f2933">${escapeXml(it.label)}</text>`;
     })
     .join('');
 
@@ -350,8 +357,8 @@ function buildFallbackSvg(rings: PolygonRing[], bbox: Bbox, areaKm2: number): st
   <path d="${path}" fill="url(#mahod-poly-fill)" fill-rule="evenodd" stroke="#1a6fb5" stroke-width="2.2" stroke-linejoin="round"/>
   <g font-family="Rubik, Heebo, Arial, sans-serif" font-size="11" fill="#1f2933">
     <rect x="${(VIEW_W - 210).toFixed(2)}" y="14" width="196" height="46" rx="6" fill="#ffffff" stroke="#dfe4ea"/>
-    <text x="${(VIEW_W - 24).toFixed(2)}" y="32" text-anchor="start" direction="rtl" font-weight="600">${escapeXml(areaLabel)}</text>
-    <text x="${(VIEW_W - 24).toFixed(2)}" y="50" text-anchor="start" direction="rtl" fill="#6b7785">${escapeXml(coordLabel)}</text>
+    <text x="${(VIEW_W - 200).toFixed(2)}" y="32" text-anchor="start" font-weight="600">${escapeXml(areaLabel)}</text>
+    <text x="${(VIEW_W - 200).toFixed(2)}" y="50" text-anchor="start" fill="#6b7785">${escapeXml(coordLabel)}</text>
   </g>
 </svg>`;
 }
@@ -468,12 +475,12 @@ export async function buildPolygonMapSvg(
   ${legendSvg}
   <g font-family="Rubik, Heebo, Arial, sans-serif" font-size="11" fill="#1f2933">
     <rect x="${(VIEW_W - 210).toFixed(2)}" y="14" width="196" height="46" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#dfe4ea"/>
-    <text x="${(VIEW_W - 24).toFixed(2)}" y="32" text-anchor="start" direction="rtl" font-weight="600">${escapeXml(areaLabel)}</text>
-    <text x="${(VIEW_W - 24).toFixed(2)}" y="50" text-anchor="start" direction="rtl" fill="#6b7785">${escapeXml(coordLabel)}</text>
+    <text x="${(VIEW_W - 200).toFixed(2)}" y="32" text-anchor="start" font-weight="600">${escapeXml(areaLabel)}</text>
+    <text x="${(VIEW_W - 200).toFixed(2)}" y="50" text-anchor="start" fill="#6b7785">${escapeXml(coordLabel)}</text>
   </g>
   <g font-family="Arial, sans-serif" font-size="9" fill="#1f2933">
     <rect x="${(VIEW_W - 210).toFixed(2)}" y="${VIEW_H - 20}" width="200" height="14" fill="#ffffff" fill-opacity="0.85"/>
-    <text x="${(VIEW_W - 14).toFixed(2)}" y="${VIEW_H - 9}" text-anchor="end" direction="ltr">${escapeXml(attribution)}</text>
+    <text x="${(VIEW_W - 200).toFixed(2)}" y="${VIEW_H - 9}" text-anchor="start">${escapeXml(attribution)}</text>
   </g>
 </svg>`;
 }

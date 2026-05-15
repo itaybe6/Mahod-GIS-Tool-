@@ -50,8 +50,6 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1';
-
 /**
  * `variant="mobile"` forces the full-label layout (used inside the mobile
  * navigation drawer where there's plenty of horizontal room). `desktop`
@@ -70,6 +68,7 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
   const itemCollapse = isMobile ? '' : 'max-[1280px]:justify-center max-[1280px]:px-1.5';
   const activeIndicatorOffset = isMobile ? '-end-3' : '-end-3 max-[1280px]:-end-2';
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isGuest = useAuthStore((s) => s.isGuest);
   const logout = useAuthStore((s) => s.logout);
 
   const handleLogout = async (): Promise<void> => {
@@ -128,7 +127,7 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
       )}
 
       <div className="mt-5">
-        {isAuthenticated ? (
+        {isAuthenticated || isGuest ? (
           <SidebarActionItem
             label="התנתקות"
             icon={LogOut}
@@ -149,11 +148,8 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
       </div>
 
       <div className="mt-auto border-t border-border pt-4 text-center text-[11px] leading-[1.6] text-text-faint">
-        <span className="mb-1.5 inline-block rounded-full border border-border bg-brand-teal/10 px-1.5 py-0.5 font-mono text-[10px] text-brand-teal">
-          v{APP_VERSION}
-        </span>
-        <div className={labelHide || undefined}>
-          מהוד הנדסה בע״מ
+        <div>
+          ITAY BEN YAIR
           <br />© 2025
         </div>
       </div>

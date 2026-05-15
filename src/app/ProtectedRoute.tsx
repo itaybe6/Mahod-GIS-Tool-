@@ -13,9 +13,10 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps): JSX.Element {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isGuest = useAuthStore((s) => s.isGuest);
   const location = useLocation();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isGuest) {
     return <Navigate to={ROUTES.LOGIN} replace state={{ from: location.pathname }} />;
   }
 

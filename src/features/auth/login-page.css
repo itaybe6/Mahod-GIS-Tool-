@@ -1,6 +1,8 @@
 .auth-shell {
   --auth-green: #2da13d;
   --auth-green-2: #34c04a;
+  --auth-guest: #1a6fb5;
+  --auth-guest-2: #3d9ee6;
   --auth-bg-0: #06080a;
   --auth-bg-1: #0b0e12;
   --auth-surface: #161c24;
@@ -192,6 +194,15 @@
 }
 
 .auth-primary-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.auth-primary-btn--guest {
+  background: linear-gradient(180deg, var(--auth-guest-2), var(--auth-guest));
+}
+
+.auth-primary-btn--guest:disabled {
   opacity: 0.75;
   cursor: wait;
 }

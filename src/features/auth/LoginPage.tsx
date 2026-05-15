@@ -59,6 +59,7 @@ export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+  const setGuest = useAuthStore((s) => s.setGuest);
   const showToast = useUIStore((s) => s.showToast);
   const [mode, setMode] = useState<AuthMode>('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -197,6 +198,13 @@ export function LoginPage(): JSX.Element {
     }
   }
 
+  function handleContinueAsGuest(): void {
+    const afterAuth = pickPostAuthRedirect((location.state as { from?: unknown } | null)?.from);
+    setGuest(true);
+    showToast('נכנסת כאורח');
+    navigate(afterAuth);
+  }
+
   return (
     <div className="auth-shell" data-mode={mode} dir="rtl">
       <section className="auth-video-side" aria-label="וידאו רקע">
@@ -289,6 +297,16 @@ export function LoginPage(): JSX.Element {
             <button className="auth-primary-btn" type="submit" disabled={pending}>
               {pending ? 'מתחבר...' : uiCopy.submitLabel}
             </button>
+            {mode === 'login' ? (
+              <button
+                type="button"
+                className="auth-primary-btn auth-primary-btn--guest"
+                disabled={pending}
+                onClick={() => handleContinueAsGuest()}
+              >
+                המשך כאורח
+              </button>
+            ) : null}
           </form>
 
           {mode === 'login' && authHint ? (
