@@ -205,7 +205,7 @@ async function handleGeoJson(body: RequestBody): Promise<Response> {
   });
 }
 
-function handleSummary(format: 'csv' | 'html', body: RequestBody): Response {
+async function handleSummary(format: 'csv' | 'html', body: RequestBody): Promise<Response> {
   let report: ReportData;
   try {
     report = parseReportData(body.analysis);
@@ -225,7 +225,7 @@ function handleSummary(format: 'csv' | 'html', body: RequestBody): Response {
     });
   }
 
-  // HTML: polygon is optional — used only for the inline SVG map. If missing or
+  // HTML: polygon is optional — used for the inline OSM map. If missing or
   // malformed we degrade gracefully and just skip the visualization section.
   let polygonGeometry: object | undefined;
   try {
@@ -234,7 +234,7 @@ function handleSummary(format: 'csv' | 'html', body: RequestBody): Response {
     polygonGeometry = undefined;
   }
 
-  const html = renderReportHtml(report, polygonGeometry);
+  const html = await renderReportHtml(report, polygonGeometry);
   const filename = asciiFilename('html');
   return new Response(html, {
     headers: {

@@ -11,7 +11,10 @@ function escapeHtml(s: string | null | undefined): string {
     .replace(/'/g, '&#39;');
 }
 
-export function renderReportHtml(data: ReportData, polygonGeometry?: unknown): string {
+export async function renderReportHtml(
+  data: ReportData,
+  polygonGeometry?: unknown
+): Promise<string> {
   const formatNumber = (n: number) => n.toLocaleString('he-IL');
   const formatKm = (meters: number) => (meters / 1000).toFixed(2);
   const formatDate = (iso: string) => {
@@ -56,7 +59,7 @@ export function renderReportHtml(data: ReportData, polygonGeometry?: unknown): s
         )}</div>`
       : '';
 
-  const mapSvg = buildPolygonMapSvg(polygonGeometry, data.metadata.polygonAreaKm2);
+  const mapSvg = await buildPolygonMapSvg(polygonGeometry, data.metadata.polygonAreaKm2);
   const mapSection = mapSvg
     ? `
 <h2>תצוגה ויזואלית של אזור הניתוח</h2>

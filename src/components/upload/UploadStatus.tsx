@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CheckCircle2, AlertTriangle, Loader2, MapPin, Trash2 } from 'lucide-react';
 import { useUploadStore } from '@/stores/uploadStore';
 import { useUIStore } from '@/stores/uiStore';
+import { SaveUploadedFileButton } from './SaveUploadedFileButton';
 
 /**
  * Status card that replaces the dropzone while a file is being parsed or after
@@ -85,6 +86,8 @@ export function UploadStatus(): JSX.Element | null {
           error={municipalitiesError}
         />
       )}
+
+      {status === 'ready' && <SaveUploadedFileButton />}
 
       {status === 'error' && error && (
         <div className="text-[11.5px] leading-snug text-red-200">{error}</div>

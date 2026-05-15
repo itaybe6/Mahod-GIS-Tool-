@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { FeatureCollection } from 'geojson';
 import {
+  type ParsedShapefile,
   parseShapefileFromFiles,
   ShapefileParseError,
 } from '@/lib/gis/shapefile';
@@ -40,6 +41,21 @@ async function lookupMunicipalities(polygon: FeatureCollection): Promise<void> {
   setMunicipalities(hits);
 }
 
+function stemFromFilename(name: string): string {
+  const lastDot = name.lastIndexOf('.');
+  return lastDot > 0 ? name.slice(0, lastDot) : name;
+}
+
+function buildSavedFile(files: File[], result: ParsedShapefile): File {
+  if (files.length === 1) {
+    return files[0]!;
+  }
+
+  const filename = `${stemFromFilename(result.sourceName) || 'polygon'}.geojson`;
+  const geojson = JSON.stringify(result.geojson);
+  return new File([geojson], filename, { type: 'application/geo+json' });
+}
+
 /**
  * Shared upload pipeline used by the dropzone, the quick-pick buttons, and any
  * future entry point. Centralises the store mutations + toast feedback so the
@@ -70,6 +86,7 @@ export function useShapefileUpload(): {
           polygon: result.geojson,
           bbox: result.bbox,
           sourceName: result.sourceName,
+          savedFile: buildSavedFile(files, result),
           featureCount: result.featureCount,
           reprojectedFrom: result.reprojectedFrom,
         });

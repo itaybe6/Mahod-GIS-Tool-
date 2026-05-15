@@ -24,6 +24,14 @@ The trade-off is that per-point attributes are no longer queryable as first-clas
 
 הרבה Shapefiles ישראליים (כולל `sample_data/test.zip` של המשימה) מגיעים בלי `.prj`, כך שה-coordinates נשארים במטרים של ITM (EPSG:2039) או ICS הישן (EPSG:28191). בלי טיפול ייעודי הם נראים כמו "פוליגון לא ב-WGS84" ונדחים. `src/lib/gis/projections.ts` מזהה אוטומטית את הגריד מטווח ה-bbox (WGS84 הוא בטווח של מעלות, ITM/ICS בטווח של מאות אלפי מטרים — אין חפיפה) ומפעיל reprojection מקומי דרך `proj4`. אם הזיהוי נכשל, מוצגת שגיאה ברורה למשתמש שמסבירה לצרף `.prj` או להמיר ל-WGS84 לפני ההעלאה. ה-CRS שזוהה נשמר ב-`reprojectedFrom` ומוצג בכרטיס הסטטוס כדי שהמשתמש יראה שהתבצעה המרה אוטומטית.
 
+## שמירת קבצים למשתמש מחובר
+
+העלאת קובץ נשארת Client-Side: `useShapefileUpload` מפרסר את הקובץ, מעדכן את `useUploadStore`, ובנוסף שומר ב-store גם `savedFile` שניתן להעלות ל־Supabase Storage. עבור קובץ יחיד אנחנו שומרים את הקובץ המקורי; עבור shapefile מפוצל אנחנו שומרים GeoJSON שנוצר מה־FeatureCollection המפוענח, כי `user_saved_files` מייצגת קובץ אחד והטעינה העתידית מ“קבצים אחרונים” צריכה להיות חד־משמעית.
+
+הבחירה לא להוסיף כרגע עמודת `display_name` נועדה להישאר תואמים לסכמה הקיימת: השם שהמשתמש מזין נשמר בשדה `original_filename`, שהוא גם השדה שמוצג ב־`/recent-files`. ה־Storage path נפרד ומכיל מזהה רנדומלי תחת `{auth.uid()}/...`, כך שאין תלות בשם התצוגה לצורך ייחודיות או הרשאות.
+
+RLS נשאר מקור האמת: `user_saved_files` מאפשר SELECT/INSERT/UPDATE/DELETE רק כאשר `auth.uid() = user_id`, ו־Storage bucket `user-uploads` מאפשר גישה רק לאובייקטים שהתיקייה הראשונה שלהם היא ה־`user_id`. לכן כפתור “שמור קובץ” מופיע רק כאשר יש `savedFile`, Supabase מוגדר, ו־`AuthSessionSync` מזהה session פעיל. אחרי העלאה מוצלחת ל־Storage נוצרת שורה בטבלה; אם הכנסת השורה נכשלת, האובייקט שהועלה נמחק כדי לא להשאיר orphan.
+
 ## Area Analysis — שני שלבים: פרסור קליינט + spatial queries בשרת
 
 מערכת הניתוח הספציאלי בנויה משני שלבים מבודדים שכל אחד אחראי על הדבר שהוא טוב בו:

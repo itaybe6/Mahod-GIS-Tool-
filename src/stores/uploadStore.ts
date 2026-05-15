@@ -39,6 +39,8 @@ export interface UploadState {
   bbox: [number, number, number, number] | null;
   /** Original file name shown in the UI (e.g. `test.zip`). */
   sourceName: string | null;
+  /** Uploadable file to persist in Supabase Storage. Null for drawn polygons. */
+  savedFile: File | null;
   featureCount: number;
   /** Set when the file arrived in an Israeli grid and we reprojected on the fly. */
   reprojectedFrom: IsraeliGrid | null;
@@ -60,6 +62,7 @@ export interface UploadState {
     polygon: FeatureCollection;
     bbox: [number, number, number, number];
     sourceName: string;
+    savedFile?: File | null;
     featureCount: number;
     reprojectedFrom: IsraeliGrid | null;
   }) => void;
@@ -77,6 +80,7 @@ export const useUploadStore = create<UploadState>((set) => ({
   polygon: null,
   bbox: null,
   sourceName: null,
+  savedFile: null,
   featureCount: 0,
   reprojectedFrom: null,
   error: null,
@@ -95,12 +99,13 @@ export const useUploadStore = create<UploadState>((set) => ({
       municipalities: null,
       municipalitiesError: null,
     }),
-  setPolygon: ({ polygon, bbox, sourceName, featureCount, reprojectedFrom }) =>
+  setPolygon: ({ polygon, bbox, sourceName, savedFile = null, featureCount, reprojectedFrom }) =>
     set({
       status: 'ready',
       polygon,
       bbox,
       sourceName,
+      savedFile,
       featureCount,
       reprojectedFrom,
       error: null,
@@ -136,6 +141,7 @@ export const useUploadStore = create<UploadState>((set) => ({
       polygon: null,
       bbox: null,
       sourceName: null,
+      savedFile: null,
       featureCount: 0,
       reprojectedFrom: null,
       error: null,

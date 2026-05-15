@@ -126,6 +126,7 @@ mahod-gis/
 │   │   ├── transit/        # `/transit`
 │   │   ├── infrastructure/ # `/infrastructure`
 │   │   ├── sources/        # `/sources` — data sources overview
+│   │   ├── recent-files/   # `/recent-files` — saved files for authenticated users
 │   │   ├── history/        # `/history` — update history
 │   │   └── export/         # ExportPanel (right rail under “שכבות מידע”)
 │   ├── lib/                # External-library config
@@ -199,6 +200,7 @@ ESLint additionally bans `any` (`@typescript-eslint/no-explicit-any: error`).
 | `/route-planner`   | `RoutePlannerPage`    | תכנון מסלול A→B (GTFS חלקי — ראו הערה למטה) |
 | `/infrastructure`  | `InfrastructurePage`  | Placeholder (coming soon)                |
 | `/sources`         | `SourcesPage`         | Live (static info on planned sources)    |
+| `/recent-files`    | `RecentFilesPage`     | קבצים שמורים למשתמש מחובר               |
 | `/history`         | `UpdateHistoryPage`   | Placeholder                              |
 | `/export`          | —                     | Redirects to `/` (ייצוא רק מפאנל ימני מתחת לשכבות מידע) |
 
@@ -208,11 +210,21 @@ Unmatched routes redirect to `/`.
 
 ---
 
+## Saved user files
+
+משתמש מחובר שמעלה פוליגון בדף הבית רואה בכרטיס סטטוס ההעלאה שדה “שם לשמירה” וכפתור **שמור קובץ**. השמירה מעלה את הקובץ ל־Supabase Storage bucket פרטי `user-uploads` תחת הנתיב `{user_id}/...`, ואז מוסיפה שורה ל־`user_saved_files` עם `storage_path`, `content_type`, `byte_size` והשם שהמשתמש בחר (`original_filename`).
+
+אם המשתמש העלה קובץ יחיד (`.zip`, `.geojson`, וכו׳) נשמר הקובץ המקורי. אם הוא העלה shapefile מפוצל (`.shp` + `.dbf` + קבצי צד), נשמר GeoJSON שנוצר מהפוליגון המפוענח כדי שבעתיד אפשר יהיה לטעון אותו חזרה מהמסך “קבצים אחרונים” בלי לשחזר bundle מרובה קבצים.
+
+`/recent-files` קורא את `user_saved_files` לפי RLS של המשתמש המחובר ומייצר signed URL להורדה מה-bucket הפרטי. אותה תשתית מיועדת לשמש בהמשך גם לטעינה חוזרת של קובץ שמור לתוך `useUploadStore`.
+
+---
+
 ## Supabase status
 
-⚠️ **Not wired yet.** `src/lib/supabase/client.ts` creates a client from empty env vars, and `Database` in `types.ts` is intentionally empty. See [`src/lib/supabase/README.md`](./src/lib/supabase/README.md) for the planned schema flow.
+`src/lib/supabase/client.ts` creates a browser client from `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Database typing lives in `src/lib/supabase/types.ts` and mirrors the migrations under `supabase/migrations`.
 
-The `.env.example` already lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) — copy to `.env.local` once a project exists.
+The `.env.example` lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) — copy to `.env.local` for local development.
 
 ---
 
