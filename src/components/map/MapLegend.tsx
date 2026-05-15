@@ -6,6 +6,8 @@ export interface MapLegendProps {
   /** Date range label, e.g. "01.04.2025 — 10.05.2025". */
   dateRange: string;
   title: string;
+  /** When true, hides the severity gradient bar and its labels. */
+  hideSeverityBar?: boolean;
 }
 
 /**
@@ -13,7 +15,7 @@ export interface MapLegendProps {
  * On phones it starts collapsed (just a tappable chip) so it doesn't cover
  * the map; tapping the chip expands the full legend card.
  */
-export function MapLegend({ dateRange, title }: MapLegendProps): JSX.Element {
+export function MapLegend({ dateRange, title, hideSeverityBar }: MapLegendProps): JSX.Element {
   const [expandedOnMobile, setExpandedOnMobile] = useState(false);
 
   return (
@@ -67,18 +69,22 @@ export function MapLegend({ dateRange, title }: MapLegendProps): JSX.Element {
 
       <div className={cn('hidden sm:block', expandedOnMobile && '!block')}>
         <div className="my-1 text-[13px] font-medium text-text sm:text-[14px]">{title}</div>
-        <div className="mb-1.5 grid h-1.5 grid-cols-4 overflow-hidden rounded-[3px]">
-          <div className="bg-success" />
-          <div className="bg-warning" />
-          <div className="bg-[#f97316]" />
-          <div className="bg-danger" />
-        </div>
-        <div className="grid grid-cols-4 text-center text-[10.5px] text-text-dim">
-          <span>נמוך</span>
-          <span>בינוני</span>
-          <span>גבוה</span>
-          <span>קריטי</span>
-        </div>
+        {!hideSeverityBar && (
+          <>
+            <div className="mb-1.5 grid h-1.5 grid-cols-4 overflow-hidden rounded-[3px]">
+              <div className="bg-success" />
+              <div className="bg-warning" />
+              <div className="bg-[#f97316]" />
+              <div className="bg-danger" />
+            </div>
+            <div className="grid grid-cols-4 text-center text-[10.5px] text-text-dim">
+              <span>נמוך</span>
+              <span>בינוני</span>
+              <span>גבוה</span>
+              <span>קריטי</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

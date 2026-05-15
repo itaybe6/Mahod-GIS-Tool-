@@ -441,7 +441,7 @@ export function MapView({ className }: MapViewProps): JSX.Element {
         </LeafletMap>
       )}
 
-      <MapLegend dateRange="01.04.2025 — 10.05.2025" title="צפיפות תאונות — אזור גוש דן" />
+      <MapLegend dateRange="01.04.2025 — 10.05.2025" title="צפיפות תאונות — אזור גוש דן" hideSeverityBar={is3D} />
       <MapMunicipalityBadge />
       {!is3D && <DrawModeOverlay />}
     </div>
