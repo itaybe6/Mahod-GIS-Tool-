@@ -84,7 +84,7 @@ export function SortControls({ config, sorts, onChange }: SortControlsProps): JS
         <div
           role="dialog"
           aria-label="הגדרת מיון מתקדם"
-          className="absolute end-0 top-full z-30 mt-1.5 w-[400px] animate-fadein rounded-lg border border-border bg-surface p-4 shadow-card"
+          className="fixed inset-x-3 top-1/2 z-50 max-h-[80dvh] -translate-y-1/2 animate-fadein overflow-y-auto rounded-lg border border-border bg-surface p-4 shadow-card sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:z-30 sm:mt-1.5 sm:max-h-none sm:w-[400px] sm:translate-y-0 sm:overflow-visible"
         >
           <header className="mb-3 flex items-center justify-between">
             <div>

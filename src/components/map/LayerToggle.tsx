@@ -43,7 +43,7 @@ const LAYER_TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastru
 
 function tabButtonClass(isActive: boolean): string {
   return cn(
-    'flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all',
+    'flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[12px] font-medium transition-all sm:gap-2 sm:px-3.5 sm:text-[13px]',
     isActive
       ? 'bg-gradient-to-br from-brand-teal to-brand-teal2 font-semibold text-white shadow-[0_4px_14px_rgba(76,175,80,0.4)]'
       : 'text-text-dim hover:text-text'
@@ -66,7 +66,7 @@ export function LayerToggle(): JSX.Element {
 
   return (
     <div
-      className="flex gap-1 rounded-full border border-border bg-bg-2 p-1"
+      className="flex w-max gap-1 rounded-full border border-border bg-bg-2 p-1"
       role="tablist"
       aria-label="שכבות מפה"
     >

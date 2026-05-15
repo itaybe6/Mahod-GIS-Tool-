@@ -135,10 +135,13 @@ export function RecentFilesPage(): JSX.Element {
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto bg-bg-1 p-3.5" dir="rtl">
+    <div
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto bg-bg-1 p-3 sm:p-3.5"
+      dir="rtl"
+    >
       <div>
-        <h1 className="text-lg font-semibold text-text">קבצים אחרונים</h1>
-        <p className="mt-1 max-w-2xl text-sm text-text-dim">
+        <h1 className="text-base font-semibold text-text sm:text-lg">קבצים אחרונים</h1>
+        <p className="mt-1 max-w-2xl text-[12.5px] text-text-dim sm:text-sm">
           קבצים שהועלו לחשבון שלך (לפי תאריך העלאה). הורדה דרך קישור חתום לשעה.
         </p>
       </div>

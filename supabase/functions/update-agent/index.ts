@@ -6,8 +6,12 @@
  *   - ?force=true   → skip change detection, always update
  *   - ?source=name  → run only one source (default: all active sources)
  *
- * Currently wired: accidents (accid_taz)
- * Add new adapters by extending the ADAPTER_MAP below.
+ * Currently wired:
+ *   - accidents      (accid_taz)
+ *   - traffic_counts (vehicle_counts → Countsvol4_YYYY)
+ *
+ * Add new adapters by creating a module that exports a default `Adapter`
+ * (see `./types.ts`) and registering it in ADAPTER_MAP below.
  *
  * Deno runtime — no Node APIs, no filesystem.
  */
@@ -15,8 +19,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { hasChanged, packageShow, pickResourceByName } from "./ckan.ts";
-import { fetchAccidents } from "./adapters/accidents.ts";
-import type { AccidentRow } from "./adapters/accidents.ts";
+import type { Adapter } from "./types.ts";
+import accidentsAdapter from "./adapters/accidents.ts";
+import vehicleCountsAdapter from "./adapters/vehicleCounts.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,19 +49,14 @@ interface UpdateLogEntry {
   notes?: string;
 }
 
-type AdapterFn = (pkg: Awaited<ReturnType<typeof packageShow>>) => Promise<{
-  rows: AccidentRow[]; // union type — extend as more adapters are added
-  resourceVersion: string;
-  shpUrl?: string;
-}>;
-
 // ─── Adapter registry ─────────────────────────────────────────────────────────
-// Add one line per new data source
+// Add one line per new data source. The key MUST match data_sources.name.
 
-const ADAPTER_MAP: Record<string, AdapterFn> = {
-  accidents: fetchAccidents as AdapterFn,
-  // roadauthority: fetchRoadAuthority,   ← next adapter goes here
-  // gtfs:          fetchGtfs,
+const ADAPTER_MAP: Record<string, Adapter> = {
+  accidents:      accidentsAdapter,
+  traffic_counts: vehicleCountsAdapter,
+  // roadauthority: roadAuthorityAdapter,   ← next adapter goes here
+  // gtfs:          gtfsAdapter,
 };
 
 const corsHeaders = {
@@ -70,8 +70,8 @@ const corsHeaders = {
 /**
  * Extracts the CKAN dataset ID from the source_url stored in data_sources.
  * Handles both forms:
- *   https://data.gov.il/dataset/accid_taz          → "accid_taz"
- *   https://data.gov.il/he/datasets/.../accid_taz  → "accid_taz"
+ *   https://data.gov.il/dataset/accid_taz                     → "accid_taz"
+ *   https://data.gov.il/he/datasets/.../vehicle_counts        → "vehicle_counts"
  */
 function extractDatasetId(sourceUrl: string): string {
   const parts = sourceUrl.replace(/\/$/, "").split("/");
@@ -145,53 +145,6 @@ async function markSourceError(
     .eq("id", sourceId);
 }
 
-// ─── Upsert — accidents ───────────────────────────────────────────────────────
-
-/**
- * Batch upserts accident rows.
- * UPSERT key: pk_teuna_fikt (unique per accident, stable across dataset versions)
- * geometry (geom) is computed in DB via the itm_to_wgs84() function.
- *
- * Sends rows in chunks of CHUNK_SIZE to avoid request size limits.
- */
-const CHUNK_SIZE = 500;
-
-async function upsertAccidents(
-  db: SupabaseClient,
-  rows: AccidentRow[]
-): Promise<{ inserted: number; updated: number }> {
-  let inserted = 0;
-  let updated = 0;
-
-  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
-
-    // Add computed geom column using PostGIS function
-    // Supabase doesn't support computed columns in upsert directly,
-    // so we pass x_itm/y_itm and rely on a DB trigger to set geom.
-    // (See: create trigger below — or call a stored procedure)
-    const { error, count } = await db
-      .from("accidents")
-      .upsert(chunk, {
-        onConflict: "pk_teuna_fikt",
-        count: "exact",
-      });
-
-    if (error) {
-      throw new Error(`Upsert failed at chunk ${i / CHUNK_SIZE}: ${error.message}`);
-    }
-
-    // Supabase returns total affected rows in count;
-    // we approximate: new rows = inserted, rest = updated
-    const affected = count ?? chunk.length;
-    inserted += affected;
-    // Note: Supabase JS v2 doesn't distinguish insert vs update in upsert count.
-    // For accurate tracking we'd need a stored procedure. This is a known limitation.
-  }
-
-  return { inserted, updated };
-}
-
 // ─── Single source runner ─────────────────────────────────────────────────────
 
 async function runSource(
@@ -219,12 +172,12 @@ async function runSource(
     const pkg = await packageShow(datasetId);
 
     // 3. Change detection (skip if up to date, unless --force)
-    const csvResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_CSV");
-    if (!isForce && !hasChanged(pkg, csvResource, source.last_modified)) {
+    const primaryResource = pickResourceByName(pkg, adapter.primaryResourceName);
+    if (!isForce && !hasChanged(pkg, primaryResource, source.last_modified)) {
       console.log(`[${source.name}] No change detected. Skipping.`);
       await logFinish(db, logId, {
         status: "skipped",
-        notes: `last_modified unchanged: ${csvResource.last_modified}`,
+        notes: `last_modified unchanged: ${primaryResource.last_modified}`,
       });
       await db
         .from("data_sources")
@@ -233,33 +186,29 @@ async function runSource(
       return;
     }
 
-    // 4. Run adapter — download + parse (no DB writes yet)
-    console.log(`[${source.name}] Change detected. Fetching data...`);
-    const result = await adapter(pkg);
+    // 4. Run adapter — full pipeline (download + parse + DB writes)
+    const sourceVersion =
+      primaryResource.last_modified ?? new Date().toISOString();
 
-    // 5. Upsert to DB
-    console.log(`[${source.name}] Upserting ${result.rows.length} rows...`);
-    const { inserted, updated } = await upsertAccidents(
-      db,
-      result.rows as AccidentRow[]
-    );
+    console.log(`[${source.name}] Change detected. Running adapter...`);
+    const result = await adapter.run(pkg, db, sourceVersion);
 
-    // 6. Update data_sources metadata
-    await markSourceChecked(db, source.id, result.resourceVersion);
+    // 5. Update data_sources metadata
+    await markSourceChecked(db, source.id, sourceVersion);
 
-    // 7. Mark log success
-    const notes = result.shpUrl
-      ? `SHP available at: ${result.shpUrl}`
-      : undefined;
-
+    // 6. Mark log success
     await logFinish(db, logId, {
       status: "success",
-      rows_inserted: inserted,
-      rows_updated: updated,
-      notes,
+      rows_inserted: result.inserted,
+      rows_updated: result.updated,
+      rows_deleted: result.deleted ?? 0,
+      notes: result.notes,
     });
 
-    console.log(`[${source.name}] Done. inserted=${inserted} updated=${updated}`);
+    console.log(
+      `[${source.name}] Done. inserted=${result.inserted} updated=${result.updated}` +
+        (result.deleted ? ` deleted=${result.deleted}` : "")
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[${source.name}] ERROR: ${message}`);
@@ -289,7 +238,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Parse query params
   const url = new URL(req.url);
   const forceUpdate = url.searchParams.get("force") === "true";
-  const sourceFilter = url.searchParams.get("source"); // e.g. ?source=accidents
+  const sourceFilter = url.searchParams.get("source"); // e.g. ?source=traffic_counts
 
   // Determine trigger type
   const triggerType: UpdateLogEntry["trigger"] = forceUpdate

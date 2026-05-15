@@ -80,13 +80,13 @@ export function SourcesPage(): JSX.Element {
 
   return (
     <div
-      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3.5"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-y-contain p-3 sm:p-3.5"
       dir="rtl"
     >
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-semibold text-text">מקורות מידע</h1>
-          <p className="mt-0.5 max-w-3xl text-sm text-text-dim">
+        <div className="min-w-0">
+          <h1 className="text-base font-semibold text-text sm:text-lg">מקורות מידע</h1>
+          <p className="mt-0.5 max-w-3xl text-[12.5px] text-text-dim sm:text-sm">
             רישום המקורות מטבלת <span className="font-mono text-[11px] text-text-faint">data_sources</span> — עדכונים
             ומעקב אחרי סוכן הטעינה.
           </p>
@@ -124,7 +124,7 @@ export function SourcesPage(): JSX.Element {
       )}
 
       {!isPending && !isError && rows && rows.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2">
           {rows.map((s) => {
             const extraDescription = metadataDescription(s.metadata);
             return (
@@ -143,7 +143,7 @@ export function SourcesPage(): JSX.Element {
                 </CardTitle>
                 <p className="font-mono text-[11px] text-text-faint">{s.name}</p>
               </CardHeader>
-              <div className="space-y-3 px-6 pb-6 pt-0">
+              <div className="space-y-3 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
                 {extraDescription != null ? (
                   <p className="text-sm leading-relaxed text-text-dim">{extraDescription}</p>
                 ) : null}

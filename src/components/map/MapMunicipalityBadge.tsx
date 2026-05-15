@@ -63,21 +63,24 @@ function renderInner(
 
   if (primary.is_nearest) {
     return (
-      <div className="relative">
+      <div className="relative max-w-full">
         <div
           aria-hidden
           className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-amber-500/25 via-amber-400/15 to-transparent blur-2xl"
         />
-        <div className="flex items-center gap-3 rounded-2xl border border-amber-300/30 bg-bg-2/85 ps-4 pe-5 py-3 shadow-[0_10px_40px_rgba(245,158,11,0.18)] backdrop-blur-md">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-500/20 text-amber-200">
-            <Compass size={18} />
+        <div className="flex max-w-full items-center gap-2.5 rounded-2xl border border-amber-300/30 bg-bg-2/85 ps-3 pe-4 py-2 shadow-[0_10px_40px_rgba(245,158,11,0.18)] backdrop-blur-md sm:gap-3 sm:ps-4 sm:pe-5 sm:py-3">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-500/20 text-amber-200 sm:h-9 sm:w-9">
+            <Compass size={16} className="sm:hidden" />
+            <Compass size={18} className="hidden sm:block" />
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-[10.5px] uppercase tracking-wider text-amber-200/80">
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="text-[10px] uppercase tracking-wider text-amber-200/80 sm:text-[10.5px]">
               סמוך לעיר
             </span>
-            <span className="text-[20px] font-bold text-text">{primary.name_he}</span>
-            <span className="text-[11.5px] text-text-dim">
+            <span className="truncate text-[16px] font-bold text-text sm:text-[20px]">
+              {primary.name_he}
+            </span>
+            <span className="truncate text-[11px] text-text-dim sm:text-[11.5px]">
               במרחק {formatDistance(primary.distance_m)} מהפוליגון
             </span>
           </div>
@@ -87,28 +90,31 @@ function renderInner(
   }
 
   return (
-    <div className="relative">
+    <div className="relative max-w-full">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-brand-teal/30 via-brand-blue/20 to-transparent blur-2xl"
       />
-      <div className="flex items-center gap-3 rounded-2xl border border-brand-teal/30 bg-bg-2/85 ps-4 pe-5 py-3 shadow-glow backdrop-blur-md">
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-teal/20 text-brand-teal2">
-          <MapPin size={18} />
+      <div className="flex max-w-full items-center gap-2.5 rounded-2xl border border-brand-teal/30 bg-bg-2/85 ps-3 pe-4 py-2 shadow-glow backdrop-blur-md sm:gap-3 sm:ps-4 sm:pe-5 sm:py-3">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-teal/20 text-brand-teal2 sm:h-9 sm:w-9">
+          <MapPin size={16} className="sm:hidden" />
+          <MapPin size={18} className="hidden sm:block" />
         </div>
-        <div className="flex flex-col leading-tight">
-          <span className="text-[10.5px] uppercase tracking-wider text-brand-teal2/90">
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="text-[10px] uppercase tracking-wider text-brand-teal2/90 sm:text-[10.5px]">
             הפוליגון נמצא ב
           </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-[22px] font-bold text-text">{primary.name_he}</span>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span className="truncate text-[18px] font-bold text-text sm:text-[22px]">
+              {primary.name_he}
+            </span>
             {primary.overlap_pct != null && primary.overlap_pct < 99 && (
-              <span className="text-[12px] text-brand-teal2">{primary.overlap_pct}%</span>
+              <span className="shrink-0 text-[12px] text-brand-teal2">{primary.overlap_pct}%</span>
             )}
           </div>
           {others.length > 0 && (
             <span
-              className="truncate text-[11.5px] text-text-dim"
+              className="truncate text-[11px] text-text-dim sm:text-[11.5px]"
               title={others
                 .map((m) =>
                   m.overlap_pct != null ? `${m.name_he} ${m.overlap_pct}%` : m.name_he

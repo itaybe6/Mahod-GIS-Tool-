@@ -147,14 +147,12 @@ function MobileDrawer({
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
+        // The app is RTL globally (html[dir=rtl]), so the right edge maps to
+        // `start-0` and "off-screen closed" is `translate-x-full` (positive X).
         className={cn(
           'fixed inset-y-0 z-[710] flex w-[82%] max-w-[320px] flex-col overflow-hidden bg-bg-1 shadow-2xl transition-transform duration-200 lg:hidden',
           side === 'start' ? 'start-0 border-e border-border' : 'end-0 border-s border-border',
-          open
-            ? 'translate-x-0'
-            : side === 'start'
-              ? 'rtl:translate-x-full ltr:-translate-x-full'
-              : 'rtl:-translate-x-full ltr:translate-x-full'
+          open ? 'translate-x-0' : side === 'start' ? 'translate-x-full' : '-translate-x-full'
         )}
       >
         <div className="flex shrink-0 items-center justify-end border-b border-border/60 px-3 py-2">

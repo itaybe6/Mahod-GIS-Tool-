@@ -62,7 +62,10 @@ function buildSavedFile(files: File[], result: ParsedShapefile): File {
  * call sites stay tiny.
  */
 export function useShapefileUpload(): {
-  ingestFiles: (files: FileList | File[]) => Promise<void>;
+  ingestFiles: (
+    files: FileList | File[],
+    options?: { persistable?: boolean }
+  ) => Promise<void>;
   isParsing: boolean;
 } {
   const setParsing = useUploadStore((s) => s.setParsing);
@@ -72,7 +75,10 @@ export function useShapefileUpload(): {
   const showToast = useUIStore((s) => s.showToast);
 
   const ingestFiles = useCallback(
-    async (input: FileList | File[]): Promise<void> => {
+    async (
+      input: FileList | File[],
+      options: { persistable?: boolean } = {}
+    ): Promise<void> => {
       const files = Array.from(input);
       if (files.length === 0) return;
 
@@ -86,7 +92,7 @@ export function useShapefileUpload(): {
           polygon: result.geojson,
           bbox: result.bbox,
           sourceName: result.sourceName,
-          savedFile: buildSavedFile(files, result),
+          savedFile: options.persistable === false ? null : buildSavedFile(files, result),
           featureCount: result.featureCount,
           reprojectedFrom: result.reprojectedFrom,
         });

@@ -26,6 +26,22 @@ This is **iteration 1** of the project: a fully-scaffolded, type-strict React + 
 
 ---
 
+## תצוגה רספונסיבית ונייד
+
+הממשק **מותאם גם לנייד ולטאבלט**: מתחת ל־`lg` (1024px) הסרגל הקבוע והפאנל הימני לא תופסים את רוחב המסך — נפתחים מ־**שורת עליון** (תפריט + לוגו + כפתור «כלים»), **מגירת ניווט** לסרגל הצד, ו־**גיליון תחתון (bottom sheet)** לפאנל הימני (העלאה, ניתוח, ייצוא וכו׳). בדסקטופ נשמר הגריד הקיים (סרגל מלא / אייקונים לפי `xl`).
+
+**במה השתמשנו (בקצרה):**
+
+- **Tailwind CSS** — נקודות שבירה (`sm`, `md`, `lg`, `xl`), `flex` / `grid`, `min-w-0`, גלילה אופקית היכן שצריך (למשל שורת שכבות במפה).
+- **Zustand** (`uiStore`) — מצב פתיחה/סגירה של מגירת התפריט וגיליון הכלים בנייד.
+- **React Router** — סגירת overlays בעת מעבר בין דפים.
+- **`index.html`** — `<meta name="viewport" content="width=device-width, initial-scale=1.0" />` לתצוגה נכונה בדפדפני מובייל.
+- **CSS נוסף** בדף ההתחברות (`login-page.css`) — התאמות לרוחב צר מאוד.
+
+דפים כמו דשבורד/מפה, תחבורה ציבורית, תשתיות, סטטיסטיקות ומקורות עברו התאמות נקודתיות (כותרות, טבלאות עם גלילה, כרטיסי KPI, מקרא מפה מתקפל בנייד וכו׳).
+
+---
+
 ## Quick start
 
 ```bash
@@ -113,7 +129,7 @@ mahod-gis/
 │   ├── app/                # App-level wiring: <App>, <Providers>, route table
 │   ├── components/         # Reusable, presentation-only components
 │   │   ├── ui/             # shadcn-style primitives (button, card, input, toggle)
-│   │   ├── layout/         # AppShell, Header, Sidebar, RightPanel
+│   │   ├── layout/         # AppShell, MobileTopBar, Sidebar, RightPanel
 │   │   ├── ExportButtons/  # GeoJSON / EXCEL (CSV) / HTML download buttons
 │   │   ├── map/            # MapContainer (Leaflet), MapTypeSelector, LayerToggle, etc.
 │   │   ├── upload/         # Dropzone + quick-upload buttons

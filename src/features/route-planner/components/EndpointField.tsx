@@ -8,6 +8,7 @@ import {
   type RoutePlannerEndpointKind,
 } from '@/stores/routePlannerStore';
 import { useMapStore } from '@/stores/mapStore';
+import { useUIStore } from '@/stores/uiStore';
 import type { GeocodeFeatureNormalized } from '@/lib/mapbox/geocoding';
 
 interface EndpointFieldProps {
@@ -50,6 +51,7 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
   const setDestination = useRoutePlannerStore((s) => s.setDestination);
   const setPickingMode = useRoutePlannerStore((s) => s.setPickingMode);
   const requestMapFocus = useMapStore((s) => s.requestMapFocus);
+  const setMobileRightPanelOpen = useUIStore((s) => s.setMobileRightPanelOpen);
 
   const setEndpoint = (next: RoutePlannerEndpoint | null) =>
     kind === 'origin' ? setOrigin(next) : setDestination(next);
@@ -63,7 +65,10 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
   };
 
   const togglePicking = (): void => {
-    setPickingMode(isPicking ? null : kind);
+    const next = isPicking ? null : kind;
+    setPickingMode(next);
+    // When entering picking mode, dismiss the mobile sheet so the map is reachable.
+    if (next != null) setMobileRightPanelOpen(false);
   };
 
   return (

@@ -58,7 +58,7 @@ export function StatPill({
   return (
     <div
       className={cn(
-        'relative flex animate-fadein items-center gap-3 rounded-md border bg-surface px-3.5 py-3 transition-all hover:-translate-y-px',
+        'relative flex animate-fadein items-center gap-2.5 rounded-md border bg-surface px-2.5 py-2.5 transition-all hover:-translate-y-px sm:gap-3 sm:px-3.5 sm:py-3',
         active
           ? cn('border-2', TONE_BORDER[tone], 'shadow-[0_0_16px_rgba(0,0,0,0.4)]')
           : 'border-border hover:border-brand-teal/30'
@@ -75,20 +75,21 @@ export function StatPill({
           {analysisBadge}
         </span>
       )}
-      <div className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-lg', TONE_BG[tone])}>
-        <Icon size={18} />
+      <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg sm:h-9 sm:w-9', TONE_BG[tone])}>
+        <Icon size={16} className="sm:hidden" />
+        <Icon size={18} className="hidden sm:block" />
       </div>
       <div className="flex min-w-0 flex-col">
-        <span className="mb-0.5 text-[11.5px] text-text-faint">{label}</span>
-        <span className="font-mono text-[18px] font-semibold leading-none text-text">
+        <span className="mb-0.5 truncate text-[10.5px] text-text-faint sm:text-[11.5px]">{label}</span>
+        <span className="font-mono text-[15px] font-semibold leading-none text-text sm:text-[18px]">
           {value}
-          {unit && <span className="ms-1 text-[11px] text-text-faint">{unit}</span>}
+          {unit && <span className="ms-1 text-[10.5px] text-text-faint sm:text-[11px]">{unit}</span>}
         </span>
       </div>
       {trend && !analysisBadge && (
         <span
           className={cn(
-            'ms-auto font-mono text-[10.5px]',
+            'ms-auto hidden font-mono text-[10.5px] sm:inline',
             trendDirection === 'down' ? 'text-danger' : 'text-success'
           )}
         >

@@ -94,7 +94,7 @@ export function SavedFilesPicker(): JSX.Element | null {
       }
 
       const file = fileFromBlob(await response.blob(), row);
-      await ingestFiles([file]);
+      await ingestFiles([file], { persistable: false });
     } catch (err) {
       showToast((err as Error).message || 'טעינת הקובץ השמור נכשלה', 4500);
     } finally {

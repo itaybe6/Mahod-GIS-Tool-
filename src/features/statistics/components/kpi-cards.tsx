@@ -34,7 +34,7 @@ export function KpiCards(): JSX.Element {
   const { data, isLoading, error } = useAccidentsKpi();
 
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
         const value =
@@ -51,23 +51,24 @@ export function KpiCards(): JSX.Element {
         return (
           <div
             key={card.key}
-            className="relative overflow-hidden rounded-lg border border-border bg-bg-1 p-4 shadow-card"
+            className="relative overflow-hidden rounded-lg border border-border bg-bg-1 p-3 shadow-card sm:p-4"
           >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-white/20 to-transparent" />
-            <div className="flex items-start justify-between gap-3">
-              <span className={cn('grid h-10 w-10 place-items-center rounded-md border', card.tone)}>
-                <Icon size={19} />
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
+              <span className={cn('grid h-9 w-9 place-items-center rounded-md border sm:h-10 sm:w-10', card.tone)}>
+                <Icon size={17} className="sm:hidden" />
+                <Icon size={19} className="hidden sm:block" />
               </span>
-              <span className="rounded-full border border-border bg-surface px-2 py-0.5 font-mono text-[10px] text-text-faint">
-                SQL VIEW
+              <span className="rounded-full border border-border bg-surface px-2 py-0.5 font-mono text-[9px] text-text-faint sm:text-[10px]">
+                SQL
               </span>
             </div>
-            <div className="mt-5">
-              <div className="min-h-8 font-mono text-[28px] font-bold leading-none text-text">
+            <div className="mt-4 sm:mt-5">
+              <div className="min-h-8 truncate font-mono text-[22px] font-bold leading-none text-text sm:text-[28px]">
                 {isLoading ? '...' : value}
               </div>
-              <div className="mt-2 text-[13px] font-medium text-text">{card.label}</div>
-              <div className="mt-1 text-[11.5px] text-text-faint">
+              <div className="mt-2 text-[12px] font-medium text-text sm:text-[13px]">{card.label}</div>
+              <div className="mt-1 text-[10.5px] text-text-faint sm:text-[11.5px]">
                 {error ? 'טעינת KPI נכשלה' : helper}
               </div>
             </div>

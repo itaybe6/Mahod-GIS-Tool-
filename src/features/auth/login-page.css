@@ -267,15 +267,54 @@
   }
 
   .auth-video-side {
-    height: 260px;
+    height: 220px;
   }
 
   .auth-form-side {
-    padding: 28px 24px 72px;
+    padding: 24px 20px 80px;
   }
 
   .auth-footer {
-    left: 24px;
-    right: 24px;
+    left: 20px;
+    right: 20px;
+  }
+}
+
+@media (max-width: 540px) {
+  .auth-video-side {
+    height: 160px;
+  }
+
+  .auth-form-side {
+    padding: 20px 16px 80px;
+  }
+
+  .auth-title {
+    font-size: 24px;
+  }
+
+  .auth-hero-logo {
+    width: min(220px, 80%);
+  }
+
+  .auth-tab {
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .auth-field input {
+    height: 44px;
+  }
+
+  .auth-primary-btn {
+    height: 46px;
+  }
+
+  .auth-footer {
+    left: 16px;
+    right: 16px;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
   }
 }

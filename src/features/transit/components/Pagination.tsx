@@ -32,9 +32,9 @@ export function Pagination({
   const end = Math.min(totalCount, (safePage + 1) * pageSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2 text-[12px] text-text-dim">
-      <div className="flex items-center gap-3">
-        <span>
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-[12px] text-text-dim sm:gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <span className="text-[11.5px] sm:text-[12px]">
           מציג <span className="font-mono text-text">{formatCount(start)}</span>–
           <span className="font-mono text-text">{formatCount(end)}</span> מתוך{' '}
           <span className="font-mono text-text">{formatCount(totalCount)}</span>
@@ -42,12 +42,13 @@ export function Pagination({
         </span>
 
         <label className="flex items-center gap-2 text-[11.5px] text-text-faint">
-          <span>שורות בעמוד</span>
+          <span className="hidden sm:inline">שורות בעמוד</span>
+          <span className="sm:hidden">שורות</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             className={cn(
-              'h-7 cursor-pointer rounded border border-border bg-bg-1 px-2 text-[12px] text-text outline-none',
+              'h-8 cursor-pointer rounded border border-border bg-bg-1 px-2 text-[12px] text-text outline-none',
               'transition-colors hover:border-brand-teal/50 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20'
             )}
           >
@@ -74,7 +75,7 @@ export function Pagination({
           onClick={() => onPageChange(Math.max(0, safePage - 1))}
         />
 
-        <span className="px-2 font-mono text-[12px] text-text">
+        <span className="px-1.5 font-mono text-[12px] text-text sm:px-2">
           {safePage + 1} / {totalPages}
         </span>
 
@@ -112,7 +113,7 @@ function PageBtn({ icon: Icon, label, onClick, disabled }: PageBtnProps): JSX.El
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="h-7 w-7"
+      className="h-8 w-8"
     >
       <Icon size={14} />
     </Button>

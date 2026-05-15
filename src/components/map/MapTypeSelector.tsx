@@ -19,7 +19,7 @@ export function MapTypeSelector(): JSX.Element {
   };
 
   return (
-    <div className="ms-auto flex gap-1 rounded-lg border border-border bg-bg-2 p-1">
+    <div className="flex shrink-0 gap-1 rounded-lg border border-border bg-bg-2 p-1">
       {MAP_TYPES.map((type) => (
         <button
           key={type}

@@ -261,8 +261,8 @@ export function AnalysisBottomSection(): JSX.Element {
       {/* Stat pills row */}
       <div
         className={cn(
-          'grid gap-2.5 max-[1024px]:grid-cols-2',
-          visibleStats.length === 5 ? 'grid-cols-5' : 'grid-cols-4'
+          'grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-2.5',
+          visibleStats.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'
         )}
       >
         {visibleStats.map((cfg) => {

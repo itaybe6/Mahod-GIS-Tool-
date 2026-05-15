@@ -19,7 +19,7 @@ export function SearchBar({
   className,
 }: SearchBarProps): JSX.Element {
   return (
-    <div className={cn('relative w-full max-w-sm', className)}>
+    <div className={cn('relative w-full sm:max-w-sm', className)}>
       <Search
         size={15}
         aria-hidden

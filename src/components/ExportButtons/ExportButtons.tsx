@@ -102,14 +102,10 @@ export function ExportButtons({
     [analysisPayload, apiBaseUrl, layers, polygon, showToast, sourceName]
   );
 
-  const items: Array<{
-    format: ExportFormat;
-    idleLabel: string;
-    variant?: 'default' | 'outline';
-  }> = [
-    { format: 'geojson', idleLabel: 'הורדת GeoJSON', variant: 'outline' },
-    { format: 'csv', idleLabel: 'EXCEL', variant: 'default' },
-    { format: 'html', idleLabel: 'הורדת HTML', variant: 'outline' },
+  const items: Array<{ format: ExportFormat; idleLabel: string }> = [
+    { format: 'geojson', idleLabel: 'הורדת GeoJSON' },
+    { format: 'csv', idleLabel: 'EXCEL' },
+    { format: 'html', idleLabel: 'הורדת HTML' },
   ];
 
   return (
@@ -118,15 +114,16 @@ export function ExportButtons({
         <p className="text-xs leading-relaxed text-text-dim">{baseReason}</p>
       )}
       <div className={cn('flex flex-wrap gap-2')}>
-        {items.map(({ format, idleLabel, variant }) => {
+        {items.map(({ format, idleLabel }) => {
           const disabled = isFormatDisabled(format) || busyFormat != null;
           const busy = busyFormat === format;
           return (
             <Button
               key={format}
               type="button"
-              variant={variant ?? 'outline'}
+              variant="default"
               size="sm"
+              className="font-bold"
               disabled={disabled}
               title={formatDisabledTitle(format)}
               onClick={() => {

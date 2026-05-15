@@ -2,6 +2,7 @@ import { Upload, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUploadStore, type PolygonInputMode } from '@/stores/uploadStore';
 import { useMapStore } from '@/stores/mapStore';
+import { useUIStore } from '@/stores/uiStore';
 
 const OPTIONS: { value: PolygonInputMode; label: string; icon: typeof Upload }[] = [
   { value: 'upload', label: 'העלאת קובץ', icon: Upload },
@@ -22,11 +23,19 @@ export function InputModeToggle(): JSX.Element {
   const setInputMode = useUploadStore((s) => s.setInputMode);
   const status = useUploadStore((s) => s.status);
   const mapType = useMapStore((s) => s.mapType);
+  const setMobileRightPanelOpen = useUIStore((s) => s.setMobileRightPanelOpen);
   const is3D = mapType === 'mapbox3d';
 
   // We *don't* lock the toggle while drawing — it acts as an explicit "cancel
   // and switch" instead, mirroring the in-canvas overlay's cancel button.
   const isLocked = status === 'parsing';
+
+  const handleSelect = (value: PolygonInputMode): void => {
+    setInputMode(value);
+    // Drawing requires interacting with the map directly, so close the
+    // mobile sheet to expose it.
+    if (value === 'draw') setMobileRightPanelOpen(false);
+  };
 
   return (
     <div
@@ -49,7 +58,7 @@ export function InputModeToggle(): JSX.Element {
                 : undefined
             }
             disabled={(isLocked && !isActive) || drawBlockedIn3D}
-            onClick={() => setInputMode(value)}
+            onClick={() => handleSelect(value)}
             className={cn(
               'flex items-center justify-center gap-1.5 rounded-[6px] px-2 py-1.5 text-[11.5px] font-medium transition-all',
               isActive

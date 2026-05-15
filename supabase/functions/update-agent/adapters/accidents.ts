@@ -1,25 +1,25 @@
 /**
  * adapters/accidents.ts
- * Adapter for accid_taz — תאונות דרכים (LMS)
+ * Adapter for accid_taz — תאונות דרכים (LMS).
  *
- * Two resources are fetched:
+ * Two resources are referenced:
  *   1. CSV  — all attribute columns (45 fields), includes x_itm / y_itm
  *   2. SHP  — geometry (Point) in ITM (EPSG:2039), served as a ZIP
  *
  * Strategy:
  *   - CSV is the source of truth for all attribute columns.
  *   - ITM coordinates (x_itm, y_itm) come from the CSV.
- *   - We let PostGIS convert ITM → WGS84 via the itm_to_wgs84() function
- *     that is already defined in the schema.
- *   - The SHP is downloaded for reference / future geometry validation,
- *     but we don't parse the binary Shapefile in Deno — PostGIS handles
- *     geometry via the CSV coordinates.
+ *   - PostGIS converts ITM → WGS84 via the itm_to_wgs84() function
+ *     defined in the schema (we only push x_itm/y_itm and let DB handle geom).
+ *   - SHP URL is captured for reference / future geometry validation.
  *
- * UPSERT key: pk_teuna_fikt (unique accident identifier from LMS)
+ * UPSERT key: pk_teuna_fikt (unique accident identifier from LMS).
  */
 
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { downloadResourceAsText, pickResourceByName } from "../ckan.ts";
 import type { CkanPackage } from "../ckan.ts";
+import type { Adapter, AdapterRunResult } from "../types.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,12 +77,6 @@ export interface AccidentRow {
   y_itm: number | null;
   // geom is computed in DB via itm_to_wgs84(x_itm, y_itm)
   source_version: string;
-}
-
-export interface AdapterResult {
-  rows: AccidentRow[];
-  resourceVersion: string; // ISO timestamp of the CSV resource
-  shpUrl: string;          // URL of the SHP resource (logged, not parsed here)
 }
 
 // ─── CSV parser (no external deps — Deno-safe) ───────────────────────────────
@@ -159,7 +153,6 @@ function toFloat(val: string): number | null {
  * we use case-insensitive lookup to be resilient.
  */
 function mapRow(raw: RawAccidentRow, sourceVersion: string): AccidentRow | null {
-  // Case-insensitive column getter
   const get = (key: string): string => {
     const k = Object.keys(raw).find(
       (k) => k.toLowerCase() === key.toLowerCase()
@@ -226,50 +219,88 @@ function mapRow(raw: RawAccidentRow, sourceVersion: string): AccidentRow | null 
   };
 }
 
-// ─── Main adapter function ────────────────────────────────────────────────────
+// ─── Upsert helper ────────────────────────────────────────────────────────────
+
+const CHUNK_SIZE = 500;
 
 /**
- * Fetches CSV resource of accid_taz, parses it, and returns typed rows.
- * Also returns the SHP URL so the caller can log it.
- *
- * Does NOT touch the DB — pure data transformation.
- * The caller (index.ts) handles upsert + update_log.
+ * Batched upsert into public.accidents. UPSERT key: pk_teuna_fikt.
+ * Supabase JS v2 doesn't distinguish insert vs update inside upsert(), so
+ * we report all affected rows as "inserted" (this matches the prior behaviour).
  */
-export async function fetchAccidents(pkg: CkanPackage): Promise<AdapterResult> {
-  // 1. Find CSV and SHP resources by stable CKAN names.
-  // The SHP payload is published as a ZIP resource, so format matching is not enough.
-  const csvResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_CSV");
-  const shpResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_SHP");
+async function upsertAccidents(
+  db: SupabaseClient,
+  rows: AccidentRow[],
+): Promise<{ inserted: number; updated: number }> {
+  let inserted = 0;
+  const updated = 0;
 
-  // 2. Download CSV text
-  console.log(`[accidents] Downloading CSV: ${csvResource.url}`);
-  const csvText = await downloadResourceAsText(csvResource);
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
 
-  // 3. Parse
-  const rawRows = parseCsv(csvText);
-  console.log(`[accidents] Parsed ${rawRows.length} raw rows from CSV`);
+    const { error, count } = await db
+      .from("accidents")
+      .upsert(chunk, {
+        onConflict: "pk_teuna_fikt",
+        count: "exact",
+      });
 
-  // 4. Map + filter invalid rows
-  const sourceVersion = csvResource.last_modified ?? new Date().toISOString();
-  const rows: AccidentRow[] = [];
-  let skipped = 0;
-
-  for (const raw of rawRows) {
-    const mapped = mapRow(raw, sourceVersion);
-    if (mapped === null) {
-      skipped++;
-    } else {
-      rows.push(mapped);
+    if (error) {
+      throw new Error(`Upsert failed at chunk ${i / CHUNK_SIZE}: ${error.message}`);
     }
+
+    inserted += count ?? chunk.length;
   }
 
-  console.log(
-    `[accidents] ${rows.length} valid rows, ${skipped} skipped (missing required fields)`
-  );
-
-  return {
-    rows,
-    resourceVersion: sourceVersion,
-    shpUrl: shpResource.url,
-  };
+  return { inserted, updated };
 }
+
+// ─── Adapter ──────────────────────────────────────────────────────────────────
+
+const accidentsAdapter: Adapter = {
+  primaryResourceName: "ACCIDENTS_TAZ_CSV",
+
+  async run(pkg: CkanPackage, db: SupabaseClient, sourceVersion: string): Promise<AdapterRunResult> {
+    const csvResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_CSV");
+    // SHP is logged for reference but not parsed inside Deno — left optional
+    // because some dataset versions may temporarily drop the SHP resource.
+    let shpUrl: string | undefined;
+    try {
+      shpUrl = pickResourceByName(pkg, "ACCIDENTS_TAZ_SHP").url;
+    } catch {
+      shpUrl = undefined;
+    }
+
+    console.log(`[accidents] Downloading CSV: ${csvResource.url}`);
+    const csvText = await downloadResourceAsText(csvResource);
+
+    const rawRows = parseCsv(csvText);
+    console.log(`[accidents] Parsed ${rawRows.length} raw rows from CSV`);
+
+    const rows: AccidentRow[] = [];
+    let skipped = 0;
+    for (const raw of rawRows) {
+      const mapped = mapRow(raw, sourceVersion);
+      if (mapped === null) {
+        skipped++;
+      } else {
+        rows.push(mapped);
+      }
+    }
+
+    console.log(
+      `[accidents] ${rows.length} valid rows, ${skipped} skipped (missing required fields)`,
+    );
+
+    console.log(`[accidents] Upserting ${rows.length} rows into accidents...`);
+    const { inserted, updated } = await upsertAccidents(db, rows);
+
+    return {
+      inserted,
+      updated,
+      notes: shpUrl ? `SHP available at: ${shpUrl}` : undefined,
+    };
+  },
+};
+
+export default accidentsAdapter;
