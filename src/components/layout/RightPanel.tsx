@@ -3,6 +3,7 @@ import { HelpCircle } from 'lucide-react';
 import { useUploadStore } from '@/stores/uploadStore';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dropzone } from '@/components/upload/Dropzone';
+import { SavedFilesPicker } from '@/components/upload/SavedFilesPicker';
 import { UploadStatus } from '@/components/upload/UploadStatus';
 import { InputModeToggle } from '@/components/upload/InputModeToggle';
 import { DrawHelper } from '@/components/upload/DrawHelper';
@@ -86,6 +87,13 @@ function renderStep1Body(
     );
   }
 
-  if (status === 'idle') return <Dropzone />;
+  if (status === 'idle') {
+    return (
+      <div className="flex flex-col gap-2">
+        <Dropzone />
+        <SavedFilesPicker />
+      </div>
+    );
+  }
   return <UploadStatus />;
 }

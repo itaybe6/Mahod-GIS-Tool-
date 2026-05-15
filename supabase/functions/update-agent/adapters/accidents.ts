@@ -18,7 +18,8 @@
  * UPSERT key: pk_teuna_fikt (unique accident identifier from LMS)
  */
 
-import { CkanPackage, downloadResourceAsText, pickResource } from "../ckan.ts";
+import { downloadResourceAsText, pickResourceByName } from "../ckan.ts";
+import type { CkanPackage } from "../ckan.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -235,9 +236,10 @@ function mapRow(raw: RawAccidentRow, sourceVersion: string): AccidentRow | null 
  * The caller (index.ts) handles upsert + update_log.
  */
 export async function fetchAccidents(pkg: CkanPackage): Promise<AdapterResult> {
-  // 1. Find CSV and SHP resources
-  const csvResource = pickResource(pkg, "CSV");
-  const shpResource = pickResource(pkg, "SHP");
+  // 1. Find CSV and SHP resources by stable CKAN names.
+  // The SHP payload is published as a ZIP resource, so format matching is not enough.
+  const csvResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_CSV");
+  const shpResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_SHP");
 
   // 2. Download CSV text
   console.log(`[accidents] Downloading CSV: ${csvResource.url}`);

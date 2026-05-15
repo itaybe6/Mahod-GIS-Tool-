@@ -1,9 +1,44 @@
 import { create } from 'zustand';
-import type { MapType } from '@/constants/mapConfig';
+import { MAP_TYPES, type MapType } from '@/constants/mapConfig';
 import type { LayerKey, MapDomainTab } from '@/types/common';
 import { useUploadStore } from '@/stores/uploadStore';
 
+const MAP_TYPE_STORAGE_KEY = 'mahod:map-type';
+
 const ALL_LAYER_KEYS: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
+
+function isMapType(value: unknown): value is MapType {
+  return typeof value === 'string' && (MAP_TYPES as readonly string[]).includes(value);
+}
+
+function readPersistedMapType(): MapType {
+  if (typeof window === 'undefined') {
+    return 'mapbox3d';
+  }
+  try {
+    const raw = window.localStorage.getItem(MAP_TYPE_STORAGE_KEY);
+    if (!raw) {
+      return 'mapbox3d';
+    }
+    if (isMapType(raw)) {
+      return raw;
+    }
+  } catch {
+    /* ignore */
+  }
+  return 'mapbox3d';
+}
+
+function persistMapType(type: MapType): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    window.localStorage.setItem(MAP_TYPE_STORAGE_KEY, type);
+  } catch {
+    /* quota / private mode */
+  }
+}
 
 /** Exactly one domain visible — driven by the dashboard top tab strip. */
 function exclusiveActiveLayers(domain: LayerKey): Record<LayerKey, boolean> {
@@ -68,7 +103,7 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
-  mapType: 'mapbox3d',
+  mapType: readPersistedMapType(),
   activeLayers: allLayersEnabled(),
   activeDomain: 'all',
   focusRequest: null,
@@ -84,6 +119,7 @@ export const useMapStore = create<MapState>((set) => ({
       }
     }
     set({ mapType: type });
+    persistMapType(type);
   },
   toggleLayer: (layer) =>
     set((state) => ({
@@ -114,3 +150,14 @@ export const useMapStore = create<MapState>((set) => ({
   setFocusAnalysisFeature: (v) => set({ focusAnalysisFeature: v }),
   clearFocusAnalysisFeature: () => set({ focusAnalysisFeature: null }),
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event: StorageEvent) => {
+    if (event.key !== MAP_TYPE_STORAGE_KEY || event.newValue === null) {
+      return;
+    }
+    if (isMapType(event.newValue)) {
+      useMapStore.setState({ mapType: event.newValue });
+    }
+  });
+}

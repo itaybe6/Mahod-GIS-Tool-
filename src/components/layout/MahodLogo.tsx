@@ -4,11 +4,20 @@ import { cn } from '@/lib/utils';
 
 import logoUrl from '../../../Logo.png?url';
 
+export interface MahodLogoProps {
+  /**
+   * `mobile` keeps the logo at full width inside the navigation drawer where
+   * there's plenty of room. `desktop` (default) collapses it at ≤1280px to
+   * match the icon-only sidebar.
+   */
+  variant?: 'desktop' | 'mobile';
+}
+
 /**
  * Brand lockup for the sidebar — official Mahod raster (`Logo.png` at repo root).
- * Scales down in the icon-only nav breakpoint (≤1280px).
+ * Scales down in the icon-only nav breakpoint (≤1280px) on desktop.
  */
-export function MahodLogo(): JSX.Element {
+export function MahodLogo({ variant = 'desktop' }: MahodLogoProps): JSX.Element {
   return (
     <NavLink
       to={ROUTES.DASHBOARD}
@@ -27,9 +36,8 @@ export function MahodLogo(): JSX.Element {
         height={48}
         decoding="async"
         className={cn(
-          'h-auto w-full max-w-[192px] object-contain object-center',
-          'max-h-[52px]',
-          'max-[1280px]:max-h-9 max-[1280px]:max-w-[3.25rem]'
+          'h-auto w-full max-w-[192px] object-contain object-center max-h-[52px]',
+          variant === 'desktop' && 'max-[1280px]:max-h-9 max-[1280px]:max-w-[3.25rem]'
         )}
       />
     </NavLink>

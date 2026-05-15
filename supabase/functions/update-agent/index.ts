@@ -12,9 +12,11 @@
  * Deno runtime — no Node APIs, no filesystem.
  */
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { hasChanged, packageShow, pickResource } from "./ckan.ts";
-import { fetchAccidents, AccidentRow } from "./adapters/accidents.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { hasChanged, packageShow, pickResourceByName } from "./ckan.ts";
+import { fetchAccidents } from "./adapters/accidents.ts";
+import type { AccidentRow } from "./adapters/accidents.ts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,12 @@ const ADAPTER_MAP: Record<string, AdapterFn> = {
   accidents: fetchAccidents as AdapterFn,
   // roadauthority: fetchRoadAuthority,   ← next adapter goes here
   // gtfs:          fetchGtfs,
+};
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 // ─── CKAN dataset ID extraction ───────────────────────────────────────────────
@@ -211,7 +219,7 @@ async function runSource(
     const pkg = await packageShow(datasetId);
 
     // 3. Change detection (skip if up to date, unless --force)
-    const csvResource = pickResource(pkg, "CSV");
+    const csvResource = pickResourceByName(pkg, "ACCIDENTS_TAZ_CSV");
     if (!isForce && !hasChanged(pkg, csvResource, source.last_modified)) {
       console.log(`[${source.name}] No change detected. Skipping.`);
       await logFinish(db, logId, {
@@ -273,10 +281,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // CORS — Supabase dashboard calls this from the browser
   if (req.method === "OPTIONS") {
     return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
+      status: 204,
+      headers: corsHeaders,
     });
   }
 
@@ -299,7 +305,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!supabaseUrl || !serviceKey) {
     return new Response(
       JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -322,14 +328,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (sourcesError) {
     return new Response(
       JSON.stringify({ error: `Failed to fetch data_sources: ${sourcesError.message}` }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   if (!sources || sources.length === 0) {
     return new Response(
       JSON.stringify({ message: "No active sources found", sourceFilter }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -348,6 +354,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   return new Response(JSON.stringify({ trigger: triggerType, results }), {
     status: 200,
-    headers: { "Content-Type": "application/json" },
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

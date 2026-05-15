@@ -55,8 +55,23 @@ const NAV_SECTIONS: NavSection[] = [
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1';
 
-export function Sidebar(): JSX.Element {
+/**
+ * `variant="mobile"` forces the full-label layout (used inside the mobile
+ * navigation drawer where there's plenty of horizontal room). `desktop`
+ * (the default) keeps the responsive icon-collapse at ≤1280px.
+ */
+export type SidebarVariant = 'desktop' | 'mobile';
+
+export interface SidebarProps {
+  variant?: SidebarVariant;
+}
+
+export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
   const navigate = useNavigate();
+  const isMobile = variant === 'mobile';
+  const labelHide = isMobile ? '' : 'max-[1280px]:hidden';
+  const itemCollapse = isMobile ? '' : 'max-[1280px]:justify-center max-[1280px]:px-1.5';
+  const activeIndicatorOffset = isMobile ? '-end-3' : '-end-3 max-[1280px]:-end-2';
   const [isTestingDataPull, setIsTestingDataPull] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
@@ -100,22 +115,41 @@ export function Sidebar(): JSX.Element {
 
   return (
     <aside
-      className="flex flex-col overflow-y-auto border-s border-border bg-[radial-gradient(circle_at_0%_0%,rgba(26,111,181,0.2),transparent_52%),radial-gradient(circle_at_100%_0%,rgba(26,111,181,0.14),transparent_48%),#0a0e1a] px-3 pb-3.5 pt-4"
+      className={cn(
+        'flex h-full flex-col overflow-y-auto border-s border-border px-3 pb-3.5 pt-4',
+        'bg-[radial-gradient(circle_at_0%_0%,rgba(26,111,181,0.2),transparent_52%),radial-gradient(circle_at_100%_0%,rgba(26,111,181,0.14),transparent_48%),#0a0e1a]'
+      )}
     >
-      <MahodLogo />
+      <MahodLogo variant={variant} />
       {NAV_SECTIONS.map((section, index) => (
         <div key={section.title} className={cn(index > 0 && 'mt-5')}>
-          <div className="px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint max-[1280px]:hidden">
+          <div
+            className={cn(
+              'px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint',
+              labelHide
+            )}
+          >
             {section.title}
           </div>
           {section.items.map((item) => (
-            <SidebarItem key={item.to} entry={item} />
+            <SidebarItem
+              key={item.to}
+              entry={item}
+              labelHide={labelHide}
+              itemCollapse={itemCollapse}
+              activeIndicatorOffset={activeIndicatorOffset}
+            />
           ))}
         </div>
       ))}
 
       <div className="mt-5">
-        <div className="px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint max-[1280px]:hidden">
+        <div
+          className={cn(
+            'px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint',
+            labelHide
+          )}
+        >
           כלים
         </div>
         <SidebarActionItem
@@ -126,16 +160,26 @@ export function Sidebar(): JSX.Element {
           }}
           disabled={isTestingDataPull}
           iconClassName={isTestingDataPull ? 'animate-spin' : undefined}
+          labelHide={labelHide}
+          itemCollapse={itemCollapse}
         />
       </div>
 
       {isAuthenticated && (
         <div className="mt-5">
-          <div className="px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint max-[1280px]:hidden">
+          <div
+            className={cn(
+              'px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint',
+              labelHide
+            )}
+          >
             חשבון
           </div>
           <SidebarItem
             entry={{ to: ROUTES.RECENT_FILES, label: 'קבצים אחרונים', icon: FolderClock }}
+            labelHide={labelHide}
+            itemCollapse={itemCollapse}
+            activeIndicatorOffset={activeIndicatorOffset}
           />
         </div>
       )}
@@ -148,9 +192,16 @@ export function Sidebar(): JSX.Element {
             onClick={() => {
               void handleLogout();
             }}
+            labelHide={labelHide}
+            itemCollapse={itemCollapse}
           />
         ) : (
-          <SidebarItem entry={{ to: ROUTES.LOGIN, label: 'התחברות', icon: LogIn }} />
+          <SidebarItem
+            entry={{ to: ROUTES.LOGIN, label: 'התחברות', icon: LogIn }}
+            labelHide={labelHide}
+            itemCollapse={itemCollapse}
+            activeIndicatorOffset={activeIndicatorOffset}
+          />
         )}
       </div>
 
@@ -158,7 +209,7 @@ export function Sidebar(): JSX.Element {
         <span className="mb-1.5 inline-block rounded-full border border-border bg-brand-teal/10 px-1.5 py-0.5 font-mono text-[10px] text-brand-teal">
           v{APP_VERSION}
         </span>
-        <div className="max-[1280px]:hidden">
+        <div className={labelHide || undefined}>
           מהוד הנדסה בע״מ
           <br />© 2025
         </div>
@@ -169,9 +220,17 @@ export function Sidebar(): JSX.Element {
 
 interface SidebarItemProps {
   entry: NavEntry;
+  labelHide: string;
+  itemCollapse: string;
+  activeIndicatorOffset: string;
 }
 
-function SidebarItem({ entry }: SidebarItemProps): JSX.Element {
+function SidebarItem({
+  entry,
+  labelHide,
+  itemCollapse,
+  activeIndicatorOffset,
+}: SidebarItemProps): JSX.Element {
   const { to, label, icon: Icon, badge } = entry;
   return (
     <NavLink
@@ -180,7 +239,7 @@ function SidebarItem({ entry }: SidebarItemProps): JSX.Element {
       className={({ isActive }) =>
         cn(
           'group relative my-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors',
-          'max-[1280px]:justify-center max-[1280px]:px-1.5',
+          itemCollapse,
           isActive
             ? 'bg-brand-teal/10 font-medium text-brand-teal'
             : 'text-text hover:bg-white/[0.04]'
@@ -192,15 +251,19 @@ function SidebarItem({ entry }: SidebarItemProps): JSX.Element {
           {isActive && (
             <span
               aria-hidden="true"
-              className="absolute -end-3 top-1/2 h-[22px] w-[3px] -translate-y-1/2 rounded-s-none rounded-e-[3px] bg-brand-teal shadow-[0_0_8px_rgba(76,175,80,0.4)] max-[1280px]:-end-2"
+              className={cn(
+                'absolute top-1/2 h-[22px] w-[3px] -translate-y-1/2 rounded-s-none rounded-e-[3px] bg-brand-teal shadow-[0_0_8px_rgba(76,175,80,0.4)]',
+                activeIndicatorOffset
+              )}
             />
           )}
           <Icon size={16} className="shrink-0" />
-          <span className="max-[1280px]:hidden">{label}</span>
+          <span className={labelHide || undefined}>{label}</span>
           {badge && (
             <span
               className={cn(
-                'ms-auto rounded border px-1.5 py-px font-mono text-[10px] max-[1280px]:hidden',
+                'ms-auto rounded border px-1.5 py-px font-mono text-[10px]',
+                labelHide,
                 isActive
                   ? 'border-brand-teal/30 bg-brand-teal/10 text-brand-teal'
                   : 'border-border bg-bg-1 text-text-faint'
@@ -221,6 +284,8 @@ interface SidebarActionItemProps {
   onClick: () => void;
   disabled?: boolean;
   iconClassName?: string | undefined;
+  labelHide: string;
+  itemCollapse: string;
 }
 
 function SidebarActionItem({
@@ -229,6 +294,8 @@ function SidebarActionItem({
   onClick,
   disabled = false,
   iconClassName,
+  labelHide,
+  itemCollapse,
 }: SidebarActionItemProps): JSX.Element {
   return (
     <button
@@ -237,14 +304,14 @@ function SidebarActionItem({
       disabled={disabled}
       className={cn(
         'group relative my-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors',
-        'max-[1280px]:justify-center max-[1280px]:px-1.5',
+        itemCollapse,
         disabled
           ? 'cursor-not-allowed text-text-faint opacity-70'
           : 'text-text hover:bg-white/[0.04]'
       )}
     >
       <Icon size={16} className={cn('shrink-0', iconClassName)} />
-      <span className="max-[1280px]:hidden">{label}</span>
+      <span className={labelHide || undefined}>{label}</span>
     </button>
   );
 }
