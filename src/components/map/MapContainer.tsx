@@ -78,11 +78,10 @@ const MARKER_ICONS = {
 } as const;
 
 /**
- * שתי תחנות הרכבת חולקות את שכבת "תשתיות" אבל מקבלות גוון סגול מובחן:
- * - רכבת כבדה → משפחת violet (סגול קר/כחלחל).
- * - רק"ל / מטרו  → משפחת fuchsia (סגול חם/ורדרד).
- * בתוך כל משפחה יש שלוש דרגות: פעילה (כהה ובלתי שקופה), בבנייה (בינונית),
- * מתוכננת (בהירה ושקופה יותר) כדי שייראו שייכים לאותו "מותג צבע".
+ * שתי תחנות הרכבת חולקות את שכבת "תשתיות" עם שני גווני סגול ברורים (בלי פוקסיה/ורוד):
+ * - רכבת כבדה → אינדיגו-סגול כהה (#4338ca …).
+ * - רק"ל / מטרו → סגול עמוק (#6b21a8 …).
+ * בתוך כל משפחה שלוש דרגות לפי סטטוס.
  */
 type StationKind = 'railway' | 'metro';
 
@@ -91,14 +90,14 @@ const STATION_STYLES: Record<
   Record<RailwayStationStatus, { color: string; label: string; opacity: number }>
 > = {
   railway: {
-    operational: { color: '#7c3aed', label: 'תחנה פעילה', opacity: 1 },
-    under_construction: { color: '#8b5cf6', label: 'בבנייה', opacity: 0.95 },
-    planned: { color: '#a78bfa', label: 'מתוכננת', opacity: 0.55 },
+    operational: { color: '#4338ca', label: 'תחנה פעילה', opacity: 1 },
+    under_construction: { color: '#4f46e5', label: 'בבנייה', opacity: 0.95 },
+    planned: { color: '#6366f1', label: 'מתוכננת', opacity: 0.55 },
   },
   metro: {
-    operational: { color: '#d946ef', label: 'תחנה פעילה', opacity: 1 },
-    under_construction: { color: '#e879f9', label: 'בבנייה', opacity: 0.95 },
-    planned: { color: '#f0abfc', label: 'מתוכננת', opacity: 0.55 },
+    operational: { color: '#6b21a8', label: 'תחנה פעילה', opacity: 1 },
+    under_construction: { color: '#7e22ce', label: 'בבנייה', opacity: 0.95 },
+    planned: { color: '#9333ea', label: 'מתוכננת', opacity: 0.55 },
   },
 };
 

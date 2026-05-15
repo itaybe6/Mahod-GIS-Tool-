@@ -15,6 +15,8 @@ export interface LayerRowProps {
   name: string;
   count: string;
   layer: LayerKey;
+  /** שורה נוספת מתחת למונה — למשל פירוט תחת «תשתיות». */
+  detail?: string;
 }
 
 const DOT_TONES: Record<LayerRowProps['dotTone'], string> = {
@@ -24,7 +26,7 @@ const DOT_TONES: Record<LayerRowProps['dotTone'], string> = {
   purple: 'bg-purple shadow-[0_0_8px_#8b5cf6,0_0_0_3px_rgba(139,92,246,0.1)]',
 };
 
-export function LayerRow({ dotTone, name, count, layer }: LayerRowProps): JSX.Element {
+export function LayerRow({ dotTone, name, count, layer, detail }: LayerRowProps): JSX.Element {
   const enabled = useMapStore((s) => s.activeLayers[layer]);
   const setLayer = useMapStore((s) => s.setLayer);
 
@@ -33,7 +35,10 @@ export function LayerRow({ dotTone, name, count, layer }: LayerRowProps): JSX.El
       <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', DOT_TONES[dotTone])} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-medium text-text">{name}</div>
-        <div className="font-mono text-[10.5px] text-text-faint">{count}</div>
+        <div className="font-mono text-[12px] leading-snug text-text-faint">{count}</div>
+        {detail ? (
+          <div className="mt-0.5 text-[11.5px] leading-snug text-text-faint/90">{detail}</div>
+        ) : null}
       </div>
       <ToggleSwitch
         checked={enabled}
@@ -53,7 +58,11 @@ export function LayersCard(): JSX.Element {
   const infrastructureCountLabel =
     railwayStations == null && metroStations == null
       ? '—'
-      : `${infrastructureCount.toLocaleString('he-IL')} מתקנים`;
+      : `${infrastructureCount.toLocaleString('he-IL')} תחנות`;
+  const infrastructureDetail =
+    railwayStations != null && metroStations != null
+      ? `רכבת: ${railwayStations.length.toLocaleString('he-IL')} · רכבת קלה: ${metroStations.length.toLocaleString('he-IL')}`
+      : 'רכבת כבדה ורכבת קלה (מטרו/רק"ל)';
 
   return (
     <Card>
@@ -77,6 +86,7 @@ export function LayersCard(): JSX.Element {
           dotTone="purple"
           name="תשתיות"
           count={infrastructureCountLabel}
+          detail={infrastructureDetail}
           layer="infrastructure"
         />
       </div>

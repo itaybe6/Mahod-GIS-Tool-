@@ -11,6 +11,7 @@ import { InfrastructurePage } from '@/features/infrastructure/InfrastructurePage
 import { SourcesPage } from '@/features/sources/SourcesPage';
 import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { RecentFilesPage } from '@/features/recent-files/RecentFilesPage';
 
 /**
  * Centralized route table.
@@ -84,6 +85,14 @@ export function AppRouter(): JSX.Element {
         element={
           <AppShell>
             <UpdateHistoryPage />
+          </AppShell>
+        }
+      />
+      <Route
+        path={ROUTES.RECENT_FILES}
+        element={
+          <AppShell>
+            <RecentFilesPage />
           </AppShell>
         }
       />

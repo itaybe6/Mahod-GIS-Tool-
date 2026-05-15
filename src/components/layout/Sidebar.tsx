@@ -9,6 +9,7 @@ import {
   History,
   LogIn,
   LogOut,
+  FolderClock,
   type LucideIcon,
 } from 'lucide-react';
 import { ROUTES, type RoutePath } from '@/constants/routes';
@@ -76,6 +77,17 @@ export function Sidebar(): JSX.Element {
           ))}
         </div>
       ))}
+
+      {isAuthenticated && (
+        <div className="mt-5">
+          <div className="px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint max-[1280px]:hidden">
+            חשבון
+          </div>
+          <SidebarItem
+            entry={{ to: ROUTES.RECENT_FILES, label: 'קבצים אחרונים', icon: FolderClock }}
+          />
+        </div>
+      )}
 
       <div className="mt-5">
         {isAuthenticated ? (

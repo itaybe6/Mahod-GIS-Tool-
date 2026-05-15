@@ -29,7 +29,7 @@ const TABS: Record<LayerKey, TabMeta> = {
   },
   infrastructure: {
     label: 'תשתיות',
-    description: 'נקודה סגולה = תשתית ציבורית',
+    description: 'תחנות רכבת (סגול-אינדיגו) ורכבת קלה / מטרו (סגול עמוק)',
     colorKey: 'infra',
   },
   traffic: {

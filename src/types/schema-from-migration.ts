@@ -24,6 +24,10 @@ export type UpdateLogRow = Tables['update_log']['Row'];
 export type UpdateLogInsert = Tables['update_log']['Insert'];
 export type UpdateLogUpdate = Tables['update_log']['Update'];
 
+export type UserSavedFilesRow = Tables['user_saved_files']['Row'];
+export type UserSavedFilesInsert = Tables['user_saved_files']['Insert'];
+export type UserSavedFilesUpdate = Tables['user_saved_files']['Update'];
+
 // --- GTFS ---
 
 export type GtfsAgencyRow = Tables['gtfs_agency']['Row'];

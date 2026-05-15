@@ -14,6 +14,7 @@ export const ROUTES = {
   INFRASTRUCTURE: '/infrastructure',
   SOURCES: '/sources',
   HISTORY: '/history',
+  RECENT_FILES: '/recent-files',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

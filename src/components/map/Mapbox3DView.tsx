@@ -421,12 +421,9 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         },
       });
 
-      // Railway + metro/LRT stations (both part of "תשתיות"), distinguished by
-      // `station_kind`:
-      //   • railway → משפחת violet (סגול קר/כחלחל) — #7c3aed / #8b5cf6 / #a78bfa.
-      //   • metro   → משפחת fuchsia (סגול חם/ורדרד) — #d946ef / #e879f9 / #f0abfc.
-      // בתוך כל משפחה הצבע מתבהר עם הסטטוס (פעילה → בבנייה → מתוכננת),
-      // ותחנות מתוכננות גם קטנות ושקופות יותר כדי שיובלטו פחות.
+      // Railway + metro/LRT — שני גווני סגול (אינדיגו מול סגול עמוק), בלי פוקסיה.
+      //   • railway: #4338ca / #4f46e5 / #6366f1
+      //   • metro:   #6b21a8 / #7e22ce / #9333ea
       map.addLayer({
         id: LAYERS.railwayStations,
         type: 'circle',
@@ -446,18 +443,18 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
             'metro', [
               'match',
               ['get', 'status'],
-              'operational', '#d946ef',
-              'under_construction', '#e879f9',
-              'planned', '#f0abfc',
-              '#d946ef',
+              'operational', '#6b21a8',
+              'under_construction', '#7e22ce',
+              'planned', '#9333ea',
+              '#6b21a8',
             ],
             'railway', [
               'match',
               ['get', 'status'],
-              'operational', '#7c3aed',
-              'under_construction', '#8b5cf6',
-              'planned', '#a78bfa',
-              '#7c3aed',
+              'operational', '#4338ca',
+              'under_construction', '#4f46e5',
+              'planned', '#6366f1',
+              '#4338ca',
             ],
             '#a855f7',
           ],
@@ -532,18 +529,17 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         const status = stringifyProperty(props.status);
         const isMetro = stringifyProperty(props.station_kind) === 'metro';
         const stationLabel = isMetro ? 'תחנת מטרו / רק"ל' : 'תחנת רכבת';
-        // משפחת fuchsia ל-רק"ל, משפחת violet לרכבת — תואם לציורי ה-circle layer.
         const accent = isMetro
           ? status === 'planned'
-            ? '#f0abfc'
+            ? '#9333ea'
             : status === 'under_construction'
-              ? '#e879f9'
-              : '#d946ef'
+              ? '#7e22ce'
+              : '#6b21a8'
           : status === 'planned'
-            ? '#a78bfa'
+            ? '#6366f1'
             : status === 'under_construction'
-              ? '#8b5cf6'
-              : '#7c3aed';
+              ? '#4f46e5'
+              : '#4338ca';
         const badgeTone: 'success' | 'medium' | 'neutral' =
           status === 'planned' ? 'neutral' : status === 'under_construction' ? 'medium' : 'success';
         return buildMapPopupHtml({

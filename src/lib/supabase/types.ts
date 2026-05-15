@@ -848,6 +848,42 @@ export type Database = {
           },
         ];
       };
+      user_saved_files: {
+        Row: {
+          id: string;
+          user_id: string;
+          bucket_id: string;
+          storage_path: string;
+          original_filename: string;
+          content_type: string | null;
+          byte_size: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          bucket_id?: string;
+          storage_path: string;
+          original_filename: string;
+          content_type?: string | null;
+          byte_size: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          bucket_id?: string;
+          storage_path?: string;
+          original_filename?: string;
+          content_type?: string | null;
+          byte_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       v_accidents_kpi: {
