@@ -278,14 +278,25 @@ ESLint additionally bans `any` (`@typescript-eslint/no-explicit-any: error`).
 | `/transit`         | `TransitPage`         | Placeholder (coming soon)                |
 | `/route-planner`   | `RoutePlannerPage`    | תכנון מסלול A→B (GTFS חלקי — ראו הערה למטה) |
 | `/infrastructure`  | `InfrastructurePage`  | Placeholder (coming soon)                |
-| `/sources`         | `SourcesPage`         | Live (static info on planned sources)    |
+| `/sources`         | `SourcesPage`         | Live — רשימת `data_sources` מ־Supabase; לכל מקור: סטטוס, **תאריך עדכון אחרון**, קישור למקור |
 | `/recent-files`    | `RecentFilesPage`     | קבצים שמורים למשתמש מחובר               |
-| `/history`         | `UpdateHistoryPage`   | Placeholder                              |
+| `/history`         | —                     | מפנה ל־`/sources` (קישורים ישנים)        |
 | `/export`          | —                     | Redirects to `/` (ייצוא רק מפאנל ימני מתחת לשכבות מידע) |
 
 **תכנון מסלול (A→B):** בדיקת תוצאות מסלול מומלצת עם **נקודות באזור יבנה** — לא נטען למסד ה־GTFS המלא בגלל **מגבלות זיכרון** בזמן ההכנסה, ולכן לא כל הארץ מיוצגת באותה רמת כיסוי; באזור יבנה אפשר לאמת שהחיפוש וה־RPC מחזירים מסלולים סבירים.
 
 Unmatched routes redirect to `/`.
+
+### מקורות מידע (`/sources`) — מתי כל מקור התעדכן
+
+בעמוד **מקורות מידע** מוצגת לכל רשומה ב־`data_sources` שורה **«עודכן לאחרונה»** בעברית (`he-IL`), לפי סדר עדיפות:
+
+1. `last_updated_at` — מועד שבו הנתונים מהמקור נטענו/עודכנו בהצלחה (סוכן העדכון).
+2. אם ריק — `last_checked_at` (בדיקה אחרונה של הסוכן).
+3. אם גם ריק — `updated_at` (עדכון שורה במסד).
+4. אם אין אף ערך — מוצג **—**.
+
+כך אפשר לראות בממשק מתי כל מקור מידע התעדכן בפועל, בלי עמוד היסטוריה נפרד.
 
 ---
 
