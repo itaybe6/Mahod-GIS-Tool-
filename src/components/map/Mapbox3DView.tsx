@@ -27,8 +27,16 @@ import {
   toMapboxLngLat,
 } from '@/features/map/mockData';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { useAnalysisStore, type AnalysisLayerKey } from '@/stores/analysisStore';
 import { useMapStore, type LastGeocodeCamera } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
+import type { LayerKey } from '@/types/common';
+import {
+  ANALYSIS_LAYER_KEYS,
+  ANALYSIS_PALETTE,
+  buildAnalysisPopupHtml,
+  getRepresentativeLatLng,
+} from './analysisLayerShared';
 import { MAP_POPUP_CLASS, buildMapPopupHtml } from './mapPopup';
 
 /* -------------------------------------------------------------------------- */
@@ -197,6 +205,32 @@ const MAPBOX_STANDARD_TOP_SLOT = 'top';
 const UPLOAD_POLYGON_EXTRUSION_HEIGHT_METERS = 40;
 
 /* -------------------------------------------------------------------------- */
+/*                          Analysis result sources / ids                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Per-analysis-layer Mapbox source/layer ids. Each of the five analysis
+ * keys (transit / accidents / roads / infrastructure / traffic) gets:
+ *   - 1 GeoJSON source containing every feature returned by `analyze-area`.
+ *   - 3 layers filtered by geometry-type: `fill` for polygons (e.g. accident
+ *     TAZ shapes), `line` for road segments, `circle` for point features.
+ */
+const ANALYSIS_SOURCE_IDS: Record<AnalysisLayerKey, string> = {
+  transit: 'src-analysis-transit',
+  accidents: 'src-analysis-accidents',
+  roads: 'src-analysis-roads',
+  infrastructure: 'src-analysis-infra',
+  traffic: 'src-analysis-traffic',
+};
+
+type AnalysisSubLayer = 'fill' | 'line' | 'circle';
+const ANALYSIS_SUB_LAYERS: ReadonlyArray<AnalysisSubLayer> = ['fill', 'line', 'circle'];
+
+function analysisLayerId(key: AnalysisLayerKey, kind: AnalysisSubLayer): string {
+  return `lyr-analysis-${key}-${kind}`;
+}
+
+/* -------------------------------------------------------------------------- */
 /*                              Token-missing UI                              */
 /* -------------------------------------------------------------------------- */
 
@@ -249,6 +283,8 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
   const { data: gtfsRows, isFetched: gtfsFetched } = useGtfsStops(uploadedBbox);
   const { data: railwayStations } = useRailwayStations();
   const { data: metroStations } = useMetroStations();
+  const analysisResults = useAnalysisStore((s) => s.results);
+  const focusAnalysisFeature = useMapStore((s) => s.focusAnalysisFeature);
 
   /* ----------------------------- init map ----------------------------- */
   useEffect(() => {
@@ -472,6 +508,64 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         },
       });
 
+      // Analysis result layers ----------------------------------------
+      // One GeoJSON source per analysis key (data is pushed reactively
+      // by the `analysisResults` effect below). Each source feeds three
+      // layers — fill / line / circle — filtered by geometry-type so the
+      // same source can render polygons (accident TAZ), lines (road
+      // segments), and points (transit stops, traffic counters, infra).
+      for (const key of ANALYSIS_LAYER_KEYS) {
+        const colour = ANALYSIS_PALETTE[key].color;
+        const sourceId = ANALYSIS_SOURCE_IDS[key];
+
+        map.addSource(sourceId, { type: 'geojson', data: EMPTY_GEOJSON });
+
+        map.addLayer({
+          id: analysisLayerId(key, 'fill'),
+          type: 'fill',
+          source: sourceId,
+          slot: MAPBOX_STANDARD_TOP_SLOT,
+          filter: ['==', ['geometry-type'], 'Polygon'],
+          paint: {
+            'fill-color': colour,
+            'fill-opacity': 0.2,
+            'fill-emissive-strength': 0.7,
+            'fill-outline-color': colour,
+          },
+        });
+
+        map.addLayer({
+          id: analysisLayerId(key, 'line'),
+          type: 'line',
+          source: sourceId,
+          slot: MAPBOX_STANDARD_TOP_SLOT,
+          filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': colour,
+            'line-width': 3.5,
+            'line-opacity': 0.95,
+            'line-emissive-strength': 1,
+          },
+        });
+
+        map.addLayer({
+          id: analysisLayerId(key, 'circle'),
+          type: 'circle',
+          source: sourceId,
+          slot: MAPBOX_STANDARD_TOP_SLOT,
+          filter: ['==', ['geometry-type'], 'Point'],
+          paint: {
+            'circle-radius': 6.5,
+            'circle-color': colour,
+            'circle-opacity': 0.95,
+            'circle-stroke-width': 1.5,
+            'circle-stroke-color': 'rgba(255,255,255,0.85)',
+            'circle-emissive-strength': 1,
+          },
+        });
+      }
+
       // Apply current visibility state immediately
       applyVisibility(map, useMapStore.getState().activeLayers);
 
@@ -525,6 +619,17 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
           title: stringifyProperty(props.name),
         }),
       );
+      // Analysis popups — share the .lp card with the Leaflet renderer so
+      // both modes show identical content (and the same row formatting).
+      for (const key of ANALYSIS_LAYER_KEYS) {
+        const colour = ANALYSIS_PALETTE[key].color;
+        for (const kind of ANALYSIS_SUB_LAYERS) {
+          attachPopup(map, analysisLayerId(key, kind), (props) =>
+            buildAnalysisPopupHtml(key, props, colour)
+          );
+        }
+      }
+
       attachPopup(map, LAYERS.railwayStations, (props) => {
         const status = stringifyProperty(props.status);
         const isMetro = stringifyProperty(props.station_kind) === 'metro';
@@ -601,6 +706,23 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
     src.setData(transitStopsToGeoJSON(stops));
   }, [glMapReady, gtfsFetched, gtfsRows, uploadedBbox]);
 
+  /* ------------------- analysis results → GeoJSON sources -------------- */
+  // Push the latest `analyze-area` payload into the per-key Mapbox sources.
+  // We must also reapply visibility here: when results arrive (or change)
+  // the active-layers state may not change at all, but layers that were
+  // hidden because they had no data should now flip on.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !glMapReady || !loadedRef.current) return;
+    for (const key of ANALYSIS_LAYER_KEYS) {
+      const src = getGeoJsonSource(map, ANALYSIS_SOURCE_IDS[key]);
+      if (!src) continue;
+      const layer = analysisResults?.[key];
+      src.setData(layer?.features ?? EMPTY_GEOJSON);
+    }
+    applyVisibility(map, useMapStore.getState().activeLayers);
+  }, [analysisResults, glMapReady]);
+
   /* --------- Supabase infra_*_stations (railway + metro/LRT) → source --- */
   useEffect(() => {
     const map = mapRef.current;
@@ -650,6 +772,49 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
       { padding: 60, maxZoom: 16, duration: 800, pitch: MAPBOX_3D_DEFAULTS.pitch }
     );
   }, [uploadedBbox, glMapReady]);
+
+  /* ------------------- focus a single analysis feature ----------------- */
+  // Mirrors the Leaflet behaviour in `AnalysisResultsLayer`: when the user
+  // clicks a row in the results panel we fly the GL camera to a
+  // representative point of the geometry and pop the same `.lp` card.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !glMapReady || !loadedRef.current || !focusAnalysisFeature) return;
+
+    const { layerKey, featureIndex } = focusAnalysisFeature;
+    const layer = analysisResults?.[layerKey];
+    const feature = layer?.features.features[featureIndex];
+    if (!feature) {
+      useMapStore.getState().clearFocusAnalysisFeature();
+      return;
+    }
+
+    const pos = getRepresentativeLatLng(feature.geometry);
+    if (pos) {
+      const targetZoom = Math.max(map.getZoom(), 15);
+      map.flyTo({
+        center: [pos.lng, pos.lat],
+        zoom: targetZoom,
+        duration: 700,
+        essential: true,
+      });
+      const colour = ANALYSIS_PALETTE[layerKey].color;
+      const html = buildAnalysisPopupHtml(layerKey, feature.properties ?? {}, colour);
+      window.setTimeout(() => {
+        new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          offset: 16,
+          maxWidth: '340px',
+          className: MAP_POPUP_CLASS,
+        })
+          .setLngLat([pos.lng, pos.lat])
+          .setHTML(html)
+          .addTo(map);
+      }, 750);
+    }
+    useMapStore.getState().clearFocusAnalysisFeature();
+  }, [focusAnalysisFeature, analysisResults, glMapReady]);
 
   const focusRequest = useMapStore((s) => s.focusRequest);
   useEffect(() => {
@@ -723,16 +888,23 @@ function flyMapToLastGeocodeCamera(map: mapboxgl.Map, cam: LastGeocodeCamera): v
   });
 }
 
-function applyVisibility(
-  map: mapboxgl.Map,
-  active: { transit: boolean; accidents: boolean; roads: boolean; infrastructure: boolean }
-): void {
+function applyVisibility(map: mapboxgl.Map, active: Record<LayerKey, boolean>): void {
   setLayerVisibility(map, LAYERS.accidents, active.accidents);
   setLayerVisibility(map, LAYERS.transit, active.transit);
   setLayerVisibility(map, LAYERS.routes, active.transit);
   setLayerVisibility(map, LAYERS.roads, active.roads);
   setLayerVisibility(map, LAYERS.infra, active.infrastructure);
   setLayerVisibility(map, LAYERS.railwayStations, active.infrastructure);
+
+  // Analysis sub-layers follow the same active-layers flag as their domain.
+  // We don't gate on "results present" — leaving the layer visible with an
+  // empty source is harmless and avoids extra plumbing.
+  for (const key of ANALYSIS_LAYER_KEYS) {
+    const visible = active[key] === true;
+    for (const kind of ANALYSIS_SUB_LAYERS) {
+      setLayerVisibility(map, analysisLayerId(key, kind), visible);
+    }
+  }
 }
 
 function setLayerVisibility(map: mapboxgl.Map, layerId: string, visible: boolean): void {

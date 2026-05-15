@@ -1,18 +1,15 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { GeoJSON, LayerGroup, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { useAnalysisStore, type AnalysisLayerKey } from '@/stores/analysisStore';
 import { useMapStore } from '@/stores/mapStore';
 import type { LatLngTuple } from '@/types/common';
-
-const PALETTE: Record<AnalysisLayerKey, { color: string; label: string }> = {
-  transit: { color: '#10b981', label: 'תחבורה ציבורית' },
-  accidents: { color: '#ef4444', label: 'תאונות דרכים' },
-  roads: { color: '#f59e0b', label: 'דרכים' },
-  infrastructure: { color: '#a855f7', label: 'תשתיות' },
-  traffic: { color: '#0ea5e9', label: 'ספירות תנועה' },
-};
+import {
+  ANALYSIS_PALETTE,
+  buildAnalysisPopupHtml,
+  getRepresentativeLatLng,
+} from './analysisLayerShared';
 
 const ANALYSIS_PANE = 'analysisResults';
 
@@ -47,11 +44,21 @@ export function AnalysisResultsLayer(): JSX.Element | null {
   const featureLayersRef = useRef<Partial<Record<AnalysisLayerKey, L.Layer[]>>>({});
 
   /* ── Setup analysis pane ──────────────────────────────────────── */
-  useEffect(() => {
-    if (map.getPane(ANALYSIS_PANE)) return;
+  // The pane MUST exist before any Marker / GeoJSON child with
+  // `pane="analysisResults"` is mounted — otherwise Leaflet's `_initIcon`
+  // crashes with `Cannot read properties of undefined (reading 'appendChild')`
+  // because `map._panes[name]` resolves to `undefined`.
+  //
+  // Doing this in a `useEffect` was too late: when the user switched from
+  // Mapbox 3D back to Leaflet while analysis results were already in the
+  // store, the children rendered on the SAME commit as the pane-creation
+  // effect, so the markers tried to add themselves before the pane existed.
+  // The mutation is idempotent, so running it during render (including under
+  // StrictMode's double-invocation) is safe.
+  if (!map.getPane(ANALYSIS_PANE)) {
     const pane = map.createPane(ANALYSIS_PANE);
     pane.style.zIndex = '650';
-  }, [map]);
+  }
 
   /* ── Focus feature (fly + open popup) ────────────────────────── */
   const focusAnalysisFeature = useMapStore((s) => s.focusAnalysisFeature);
@@ -86,7 +93,7 @@ export function AnalysisResultsLayer(): JSX.Element | null {
 
   const visibleLayers = useMemo(() => {
     if (!results) return [] as AnalysisLayerKey[];
-    return (Object.keys(PALETTE) as AnalysisLayerKey[]).filter((key) => {
+    return (Object.keys(ANALYSIS_PALETTE) as AnalysisLayerKey[]).filter((key) => {
       if (!activeLayers[key]) return false;
       const lr = results[key];
       return lr != null && isNonEmptyFeatureCollection(lr.features);
@@ -99,7 +106,7 @@ export function AnalysisResultsLayer(): JSX.Element | null {
     <>
       {visibleLayers.map((key) => {
         const layer = results[key]!;
-        const { color: colour } = PALETTE[key];
+        const { color: colour } = ANALYSIS_PALETTE[key];
         const pulseIcon = makeAnalysisPulseIcon(colour);
         const dataKey = `${key}-${layer.features.features.length}-${layer.counts.count}`;
 
@@ -112,7 +119,7 @@ export function AnalysisResultsLayer(): JSX.Element | null {
                 .map((feature, featureIndex) => ({
                   feature,
                   featureIndex,
-                  position: getRepresentativePosition(feature.geometry),
+                  position: toLatLngTuple(getRepresentativeLatLng(feature.geometry)),
                 }))
                 .filter(
                   (
@@ -141,7 +148,9 @@ export function AnalysisResultsLayer(): JSX.Element | null {
               })}
               onEachFeature={(feature, leafletLayer) => {
                 featureLayersRef.current[key]!.push(leafletLayer);
-                leafletLayer.bindPopup(buildPopupHtml(key, feature, colour));
+                leafletLayer.bindPopup(
+                  buildAnalysisPopupHtml(key, feature.properties ?? {}, colour)
+                );
               }}
             />
             {linePulseMarkers.map(({ feature, featureIndex, position }) => (
@@ -160,7 +169,9 @@ export function AnalysisResultsLayer(): JSX.Element | null {
               >
                 <Popup>
                   <span
-                    dangerouslySetInnerHTML={{ __html: buildPopupHtml(key, feature, colour) }}
+                    dangerouslySetInnerHTML={{
+                      __html: buildAnalysisPopupHtml(key, feature.properties ?? {}, colour),
+                    }}
                   />
                 </Popup>
               </Marker>
@@ -172,140 +183,6 @@ export function AnalysisResultsLayer(): JSX.Element | null {
   );
 }
 
-/* ── Helpers ──────────────────────────────────────────────────────── */
-
-function getRepresentativePosition(geometry: Geometry): LatLngTuple | null {
-  switch (geometry.type) {
-    case 'Point':
-      return positionToLatLng(geometry.coordinates);
-    case 'MultiPoint':
-      return positionToLatLng(geometry.coordinates[0]);
-    case 'LineString':
-      return positionToLatLng(geometry.coordinates[Math.floor(geometry.coordinates.length / 2)]);
-    case 'MultiLineString': {
-      const line = geometry.coordinates.find((coords) => coords.length > 0);
-      return line ? positionToLatLng(line[Math.floor(line.length / 2)]) : null;
-    }
-    case 'Polygon':
-      return positionToLatLng(geometry.coordinates[0]?.[0]);
-    case 'MultiPolygon':
-      return positionToLatLng(geometry.coordinates[0]?.[0]?.[0]);
-    default:
-      return null;
-  }
-}
-
-function positionToLatLng(position: Position | undefined): LatLngTuple | null {
-  if (!position || position.length < 2) return null;
-  const [lng, lat] = position;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-  return [lat, lng];
-}
-
-function buildPopupHtml(
-  key: AnalysisLayerKey,
-  feature: Feature<Geometry>,
-  colour: string
-): string {
-  const props = (feature.properties ?? {}) as Record<string, unknown>;
-  const title = getFeatureTitle(key, props);
-  const rows = getPopupRows(key, props);
-
-  const rowsHtml = rows
-    .map(
-      ([k, v]) =>
-        `<div class="lp-row"><span class="lp-k">${escHtml(k)}</span><span class="lp-v">${escHtml(v)}</span></div>`
-    )
-    .join('');
-
-  return `<div class="lp">
-    <div class="lp-hd">
-      <span class="lp-dot" style="background:${colour};box-shadow:0 0 6px ${colour}99"></span>
-      <span class="lp-title">${escHtml(title)}</span>
-    </div>
-    <div class="lp-body">${rowsHtml}</div>
-  </div>`;
-}
-
-function getFeatureTitle(key: AnalysisLayerKey, props: Record<string, unknown>): string {
-  switch (key) {
-    case 'transit':
-      return str(props.stop_name ?? props.name ?? '—');
-    case 'accidents':
-      return props.city ? str(props.city) : `אזור TAZ ${str(props.id ?? '—')}`;
-    case 'roads':
-      return props.road_name
-        ? str(props.road_name)
-        : props.road_number
-          ? `כביש ${str(props.road_number)}`
-          : '—';
-    case 'infrastructure':
-      return str(props.name ?? props.category ?? '—');
-    case 'traffic':
-      return str(props.description ?? props.count_type ?? '—');
-    default:
-      return '—';
-  }
-}
-
-function getPopupRows(
-  key: AnalysisLayerKey,
-  props: Record<string, unknown>
-): [string, string][] {
-  const rows: [string, string][] = [];
-  const add = (label: string, val: unknown) => {
-    const v = str(val);
-    if (v && v !== 'null' && v !== 'undefined') rows.push([label, v]);
-  };
-
-  switch (key) {
-    case 'transit':
-      add('סוג', props.type);
-      add('מזהה תחנה', props.stop_id);
-      add('קוד', props.stop_code);
-      add('אזור', props.zone_id);
-      if (typeof props.routes === 'number' && props.routes > 0) add('קווים', props.routes);
-      break;
-    case 'accidents':
-      add('יישוב', props.city);
-      if (typeof props.accidents === 'number') add('תאונות', props.accidents);
-      if (typeof props.fatal === 'number' && props.fatal > 0) add('הרוגים', props.fatal);
-      if (typeof props.severe_inj === 'number' && props.severe_inj > 0)
-        add('פצועים קשה', props.severe_inj);
-      if (typeof props.light_inj === 'number' && props.light_inj > 0)
-        add('פצועים קל', props.light_inj);
-      add('שנה', props.year);
-      add('חומרה', props.severity);
-      break;
-    case 'roads':
-      if (props.road_number) add('מספר כביש', props.road_number);
-      add('רשות', props.authority);
-      if (typeof props.length_m === 'number')
-        add('אורך', `${Math.round(props.length_m).toLocaleString('he-IL')} מ'`);
-      break;
-    case 'infrastructure':
-      add('סוג', props.category);
-      add('סטטוס', props.status);
-      break;
-    case 'traffic':
-      add('סוג ספירה', props.count_type);
-      add('תאריך', props.count_date);
-      if (typeof props.total_volume === 'number' && props.total_volume > 0)
-        add('נפח כולל', props.total_volume.toLocaleString('he-IL'));
-      if (typeof props.volume_rows === 'number' && props.volume_rows > 0)
-        add('רשומות', props.volume_rows.toLocaleString('he-IL'));
-      break;
-  }
-  return rows;
-}
-
-const str = (v: unknown): string => (v == null ? '' : String(v));
-
-function escHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function toLatLngTuple(c: { lat: number; lng: number } | null): LatLngTuple | null {
+  return c ? [c.lat, c.lng] : null;
 }
