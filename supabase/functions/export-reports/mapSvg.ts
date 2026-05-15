@@ -29,6 +29,22 @@ interface Bbox {
   maxLat: number;
 }
 
+/** Raw GeoJSON-ish feature — only the parts we use to draw on the map. */
+export interface MapFeature {
+  geometry: unknown;
+  properties?: Record<string, unknown>;
+}
+
+/**
+ * Per-layer features overlaid on top of the OSM basemap. Match the same palette
+ * used by the live Leaflet/Mapbox views so the report matches the on-screen map.
+ */
+export interface MapLayerFeatures {
+  publicTransport?: MapFeature[];
+  accidents?: MapFeature[];
+  roads?: MapFeature[];
+}
+
 const TILE_SIZE = 256;
 const VIEW_W = 720;
 const VIEW_H = 380;
@@ -37,6 +53,15 @@ const TILE_TIMEOUT_MS = 8000;
 const MAX_TILES = 25;
 const TILE_USER_AGENT = 'mahod-gis-export-reports/1.0 (+https://mahod.co.il)';
 const TILE_SUBDOMAINS = ['a', 'b', 'c'] as const;
+
+const COLOR_TRANSIT = '#10b981';
+const COLOR_ACCIDENTS = '#ef4444';
+const COLOR_ROADS = '#f59e0b';
+const COLOR_POLYGON = '#1a6fb5';
+
+const MAX_RENDER_STOPS = 800;
+const MAX_RENDER_ACCIDENTS = 1500;
+const MAX_RENDER_ROAD_SEGMENTS = 800;
 
 function isLngLat(v: unknown): v is LngLat {
   return (
@@ -165,6 +190,113 @@ function ringToPath(ring: LngLat[], project: (lng: number, lat: number) => [numb
   return `${d.trim()} Z`;
 }
 
+function lineToPath(
+  coords: unknown,
+  project: (lng: number, lat: number) => [number, number]
+): string {
+  if (!Array.isArray(coords) || coords.length < 2) return '';
+  let d = '';
+  let started = false;
+  for (const c of coords) {
+    if (!isLngLat(c)) continue;
+    const [x, y] = project(c[0], c[1]);
+    d += `${started ? 'L' : 'M'} ${x.toFixed(2)} ${y.toFixed(2)} `;
+    started = true;
+  }
+  return d.trim();
+}
+
+function buildPointsSvg(
+  features: MapFeature[] | undefined,
+  cap: number,
+  project: (lng: number, lat: number) => [number, number],
+  fill: string,
+  radius: number
+): string {
+  if (!features || features.length === 0) return '';
+  const max = Math.min(features.length, cap);
+  const dots: string[] = [];
+  for (let i = 0; i < max; i += 1) {
+    const f = features[i]!;
+    const g = f.geometry as { type?: string; coordinates?: unknown } | null | undefined;
+    if (!g || g.type !== 'Point' || !isLngLat(g.coordinates)) continue;
+    const [x, y] = project(g.coordinates[0], g.coordinates[1]);
+    if (x < -8 || x > VIEW_W + 8 || y < -8 || y > VIEW_H + 8) continue;
+    dots.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${radius}"/>`);
+  }
+  if (dots.length === 0) return '';
+  return `<g fill="${fill}" stroke="#ffffff" stroke-width="0.9" fill-opacity="0.95">${dots.join('')}</g>`;
+}
+
+function buildRoadsSvg(
+  features: MapFeature[] | undefined,
+  cap: number,
+  project: (lng: number, lat: number) => [number, number]
+): string {
+  if (!features || features.length === 0) return '';
+  const segments: string[] = [];
+  let segCount = 0;
+  for (const f of features) {
+    if (segCount >= cap) break;
+    const g = f.geometry as { type?: string; coordinates?: unknown } | null | undefined;
+    if (!g) continue;
+    if (g.type === 'LineString') {
+      const d = lineToPath(g.coordinates, project);
+      if (d) {
+        segments.push(d);
+        segCount += 1;
+      }
+    } else if (g.type === 'MultiLineString' && Array.isArray(g.coordinates)) {
+      for (const ls of g.coordinates as unknown[]) {
+        if (segCount >= cap) break;
+        const d = lineToPath(ls, project);
+        if (d) {
+          segments.push(d);
+          segCount += 1;
+        }
+      }
+    }
+  }
+  if (segments.length === 0) return '';
+  return `<g stroke="${COLOR_ROADS}" stroke-width="2.2" fill="none" opacity="0.9" stroke-linecap="round" stroke-linejoin="round"><path d="${segments.join(' ')}"/></g>`;
+}
+
+function buildLegendSvg(features: MapLayerFeatures): string {
+  const items: Array<{ color: string; label: string; shape: 'dot' | 'line' }> = [];
+  if (features.publicTransport && features.publicTransport.length > 0) {
+    items.push({ color: COLOR_TRANSIT, label: 'תחנות תחבורה ציבורית', shape: 'dot' });
+  }
+  if (features.accidents && features.accidents.length > 0) {
+    items.push({ color: COLOR_ACCIDENTS, label: 'תאונות', shape: 'dot' });
+  }
+  if (features.roads && features.roads.length > 0) {
+    items.push({ color: COLOR_ROADS, label: 'דרכים', shape: 'line' });
+  }
+  items.push({ color: COLOR_POLYGON, label: 'אזור הניתוח', shape: 'line' });
+  if (items.length === 0) return '';
+
+  const w = 168;
+  const lineH = 16;
+  const h = 12 + items.length * lineH;
+  const x0 = 12;
+  const y0 = 12;
+  const rows = items
+    .map((it, i) => {
+      const cy = y0 + 22 + i * lineH;
+      const swatch =
+        it.shape === 'dot'
+          ? `<circle cx="${x0 + w - 14}" cy="${cy - 3}" r="4" fill="${it.color}" stroke="#ffffff" stroke-width="0.8"/>`
+          : `<rect x="${x0 + w - 22}" y="${cy - 5}" width="16" height="3" fill="${it.color}"/>`;
+      return `${swatch}<text x="${x0 + w - 28}" y="${cy}" text-anchor="end" font-size="10.5" fill="#1f2933">${escapeXml(it.label)}</text>`;
+    })
+    .join('');
+
+  return `<g font-family="Rubik, Heebo, Arial, sans-serif">
+    <rect x="${x0}" y="${y0}" width="${w}" height="${h}" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#dfe4ea"/>
+    ${rows}
+  </g>`;
+}
+
 function fmtCoord(n: number): string {
   return n.toFixed(4);
 }
@@ -223,10 +355,16 @@ function buildFallbackSvg(rings: PolygonRing[], bbox: Bbox, areaKm2: number): st
 }
 
 /**
- * Returns an inline SVG string with an OSM basemap and the polygon overlay.
- * Falls back to a non-tiled visualization when tiles can't be fetched.
+ * Returns an inline SVG string with an OSM basemap, the analysis polygon and
+ * (optionally) the same per-layer features that the Leaflet map renders —
+ * stops, accidents and roads. Falls back to a non-tiled visualization when
+ * tiles can't be fetched.
  */
-export async function buildPolygonMapSvg(geometry: unknown, areaKm2: number): Promise<string> {
+export async function buildPolygonMapSvg(
+  geometry: unknown,
+  areaKm2: number,
+  features: MapLayerFeatures = {}
+): Promise<string> {
   const rings = geometryToRings(geometry);
   if (rings.length === 0) return '';
   const bbox = computeBbox(rings);
@@ -300,6 +438,11 @@ export async function buildPolygonMapSvg(geometry: unknown, areaKm2: number): Pr
     })
     .join(' ');
 
+  const roadsSvg = buildRoadsSvg(features.roads, MAX_RENDER_ROAD_SEGMENTS, project);
+  const stopsSvg = buildPointsSvg(features.publicTransport, MAX_RENDER_STOPS, project, COLOR_TRANSIT, 3.4);
+  const accidentsSvg = buildPointsSvg(features.accidents, MAX_RENDER_ACCIDENTS, project, COLOR_ACCIDENTS, 2.6);
+  const legendSvg = buildLegendSvg(features);
+
   const centerLat = (bbox.minLat + bbox.maxLat) / 2;
   const centerLng = (bbox.minLng + bbox.maxLng) / 2;
   const areaLabel = Number.isFinite(areaKm2) ? `${areaKm2.toFixed(2)} קמ״ר` : '';
@@ -313,8 +456,12 @@ export async function buildPolygonMapSvg(geometry: unknown, areaKm2: number): Pr
   <rect width="${VIEW_W}" height="${VIEW_H}" fill="#f4f6f8"/>
   <g clip-path="url(#mahod-map-clip)">
     ${tileImgs}
-    <path d="${path}" fill="rgba(26,111,181,0.22)" fill-rule="evenodd" stroke="#1a6fb5" stroke-width="2.5" stroke-linejoin="round"/>
+    ${roadsSvg}
+    <path d="${path}" fill="rgba(26,111,181,0.18)" fill-rule="evenodd" stroke="${COLOR_POLYGON}" stroke-width="2.5" stroke-linejoin="round"/>
+    ${stopsSvg}
+    ${accidentsSvg}
   </g>
+  ${legendSvg}
   <g font-family="Rubik, Heebo, Arial, sans-serif" font-size="11" fill="#1f2933">
     <rect x="${(VIEW_W - 200).toFixed(2)}" y="14" width="186" height="46" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#dfe4ea"/>
     <text x="${(VIEW_W - 16).toFixed(2)}" y="32" text-anchor="end" font-weight="600">${escapeXml(areaLabel)}</text>

@@ -1,9 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { extractPolygonGeometry } from './polygon.ts';
 import { mergeLayerGeoJson } from './geojsonMerge.ts';
 import { renderReportCsv } from './csvReport.ts';
 import { renderReportHtml } from './htmlReport.ts';
+import type { MapFeature, MapLayerFeatures } from './mapSvg.ts';
 import type { ReportData } from './types.ts';
 
 const CORS_HEADERS = {
@@ -143,6 +144,62 @@ function parseReportData(v: unknown): ReportData {
   };
 }
 
+/** Build a service-role Supabase client, or null if env is missing. */
+function getServiceSupabase(): SupabaseClient | null {
+  const url = Deno.env.get('SUPABASE_URL');
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+/**
+ * Call the per-layer `query_*_in_polygon` RPCs in parallel for the requested
+ * layers. Each result is the raw envelope returned by the RPC (used by both
+ * the GeoJSON merger and the HTML map overlay).
+ */
+async function fetchLayerEnvelopes(
+  supabase: SupabaseClient,
+  polygonText: string,
+  wanted: typeof RPC_NAMES
+): Promise<{ results: Array<{ layer: string; envelope: unknown }>; errors: string[] }> {
+  const settled = await Promise.allSettled(
+    wanted.map(async (w) => {
+      const { data, error } = await supabase.rpc(w.rpc, { polygon_geojson: polygonText });
+      if (error) throw new Error(`${w.rpc}: ${error.message}`);
+      return { layer: w.exportLayer, envelope: data };
+    })
+  );
+
+  const results: Array<{ layer: string; envelope: unknown }> = [];
+  const errors: string[] = [];
+  for (let i = 0; i < settled.length; i += 1) {
+    const out = settled[i]!;
+    if (out.status === 'fulfilled') {
+      results.push(out.value);
+    } else {
+      errors.push(out.reason instanceof Error ? out.reason.message : String(out.reason));
+    }
+  }
+  return { results, errors };
+}
+
+/** Pull the inner `Feature[]` array out of an RPC envelope (`{features:{features:[…]}}`). */
+function envelopeToFeatures(envelope: unknown): MapFeature[] {
+  if (!envelope || typeof envelope !== 'object') return [];
+  const wrap = (envelope as { features?: unknown }).features;
+  if (!wrap || typeof wrap !== 'object') return [];
+  const inner = (wrap as { features?: unknown }).features;
+  if (!Array.isArray(inner)) return [];
+  const out: MapFeature[] = [];
+  for (const raw of inner) {
+    if (!raw || typeof raw !== 'object') continue;
+    const f = raw as { type?: string; geometry?: unknown; properties?: Record<string, unknown> };
+    if (f.type !== 'Feature' || f.geometry == null) continue;
+    out.push({ geometry: f.geometry, properties: f.properties });
+  }
+  return out;
+}
+
 async function handleGeoJson(body: RequestBody): Promise<Response> {
   let polygonGeometry: object;
   try {
@@ -163,32 +220,17 @@ async function handleGeoJson(body: RequestBody): Promise<Response> {
     return jsonResponse({ error: 'יש לבחור לפחות שכבה אחת לייצוא' }, 400);
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceRoleKey) {
+  const supabase = getServiceSupabase();
+  if (!supabase) {
     return jsonResponse({ error: 'Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY' }, 500);
   }
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
   const polygonText = JSON.stringify(polygonGeometry);
 
-  const settled = await Promise.allSettled(
-    wanted.map(async (w) => {
-      const { data, error } = await supabase.rpc(w.rpc, { polygon_geojson: polygonText });
-      if (error) throw new Error(`${w.rpc}: ${error.message}`);
-      return { layer: w.exportLayer, envelope: data };
-    })
+  const { results: layerResults, errors: errs } = await fetchLayerEnvelopes(
+    supabase,
+    polygonText,
+    wanted
   );
-
-  const layerResults: Array<{ layer: string; envelope: unknown }> = [];
-  const errs: string[] = [];
-  for (let i = 0; i < settled.length; i += 1) {
-    const out = settled[i]!;
-    if (out.status === 'fulfilled') {
-      layerResults.push(out.value);
-    } else {
-      errs.push(out.reason instanceof Error ? out.reason.message : String(out.reason));
-    }
-  }
   if (layerResults.length === 0) {
     return jsonResponse({ error: 'כל השכבות נכשלו', details: errs }, 502);
   }
@@ -225,8 +267,9 @@ async function handleSummary(format: 'csv' | 'html', body: RequestBody): Promise
     });
   }
 
-  // HTML: polygon is optional — used for the inline OSM map. If missing or
-  // malformed we degrade gracefully and just skip the visualization section.
+  // HTML: polygon + per-layer features are optional — used for the inline OSM
+  // map overlay. If anything is missing or fails we degrade gracefully and
+  // still render the rest of the report.
   let polygonGeometry: object | undefined;
   try {
     polygonGeometry = extractPolygonGeometry(body.polygon);
@@ -234,7 +277,37 @@ async function handleSummary(format: 'csv' | 'html', body: RequestBody): Promise
     polygonGeometry = undefined;
   }
 
-  const html = await renderReportHtml(report, polygonGeometry);
+  let mapFeatures: MapLayerFeatures = {};
+  if (polygonGeometry) {
+    let layers: LayerFlags | null = null;
+    try {
+      layers = parseLayers(body.layers);
+    } catch {
+      // No layers selected — render polygon without overlays.
+    }
+    const wanted = layers ? RPC_NAMES.filter((x) => layers![x.layerKey]) : [];
+    const supabase = wanted.length > 0 ? getServiceSupabase() : null;
+    if (supabase && wanted.length > 0) {
+      const polygonText = JSON.stringify(polygonGeometry);
+      try {
+        const { results } = await fetchLayerEnvelopes(supabase, polygonText, wanted);
+        const byLayer: Record<string, MapFeature[]> = {};
+        for (const r of results) {
+          byLayer[r.layer] = envelopeToFeatures(r.envelope);
+        }
+        mapFeatures = {
+          ...(byLayer.gtfs_stop ? { publicTransport: byLayer.gtfs_stop } : {}),
+          ...(byLayer.accident ? { accidents: byLayer.accident } : {}),
+          ...(byLayer.road ? { roads: byLayer.road } : {}),
+        };
+      } catch {
+        // Soft-fail: report is still useful without the overlay.
+        mapFeatures = {};
+      }
+    }
+  }
+
+  const html = await renderReportHtml(report, polygonGeometry, mapFeatures);
   const filename = asciiFilename('html');
   return new Response(html, {
     headers: {

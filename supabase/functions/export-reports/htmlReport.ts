@@ -1,5 +1,5 @@
 import type { ReportData } from './types.ts';
-import { buildPolygonMapSvg } from './mapSvg.ts';
+import { buildPolygonMapSvg, type MapLayerFeatures } from './mapSvg.ts';
 
 function escapeHtml(s: string | null | undefined): string {
   if (s == null) return '';
@@ -13,7 +13,8 @@ function escapeHtml(s: string | null | undefined): string {
 
 export async function renderReportHtml(
   data: ReportData,
-  polygonGeometry?: unknown
+  polygonGeometry?: unknown,
+  mapFeatures: MapLayerFeatures = {}
 ): Promise<string> {
   const formatNumber = (n: number) => n.toLocaleString('he-IL');
   const formatKm = (meters: number) => (meters / 1000).toFixed(2);
@@ -59,7 +60,11 @@ export async function renderReportHtml(
         )}</div>`
       : '';
 
-  const mapSvg = await buildPolygonMapSvg(polygonGeometry, data.metadata.polygonAreaKm2);
+  const mapSvg = await buildPolygonMapSvg(
+    polygonGeometry,
+    data.metadata.polygonAreaKm2,
+    mapFeatures
+  );
   const mapSection = mapSvg
     ? `
 <h2>תצוגה ויזואלית של אזור הניתוח</h2>

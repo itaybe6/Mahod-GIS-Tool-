@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -7,6 +8,7 @@ import {
   Building2,
   Database,
   History,
+  RefreshCw,
   LogIn,
   LogOut,
   FolderClock,
@@ -14,8 +16,9 @@ import {
 } from 'lucide-react';
 import { ROUTES, type RoutePath } from '@/constants/routes';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 import { MahodLogo } from './MahodLogo';
 
 interface NavEntry {
@@ -54,8 +57,41 @@ const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1';
 
 export function Sidebar(): JSX.Element {
   const navigate = useNavigate();
+  const [isTestingDataPull, setIsTestingDataPull] = useState(false);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
+  const showToast = useUIStore((s) => s.showToast);
+
+  const handleDataPullTest = async (): Promise<void> => {
+    if (isTestingDataPull) return;
+    if (!isSupabaseConfigured) {
+      showToast('Supabase לא מוגדר (חסרים VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).', 5000);
+      return;
+    }
+
+    setIsTestingDataPull(true);
+    showToast('בודק משיכת נתונים...');
+
+    try {
+      const result = (await supabase.functions.invoke<UpdateAgentResponse>('update-agent')) as {
+        data: UpdateAgentResponse | null;
+        error: unknown | null;
+      };
+
+      if (result.error) {
+        showToast(await extractFunctionError(result.error), 6000);
+        return;
+      }
+
+      const summary = formatUpdateAgentResult(result.data);
+      showToast(summary, 5000);
+    } catch (err) {
+      showToast((err as Error).message || 'בדיקת משיכת הנתונים נכשלה', 6000);
+    } finally {
+      setIsTestingDataPull(false);
+    }
+  };
+
   const handleLogout = async (): Promise<void> => {
     await supabase.auth.signOut();
     logout();
@@ -77,6 +113,21 @@ export function Sidebar(): JSX.Element {
           ))}
         </div>
       ))}
+
+      <div className="mt-5">
+        <div className="px-2 pb-2 text-[10.5px] font-semibold uppercase tracking-[1.4px] text-text-faint max-[1280px]:hidden">
+          כלים
+        </div>
+        <SidebarActionItem
+          label={isTestingDataPull ? 'בודק משיכת נתונים...' : 'בדיקת משיכת נתונים'}
+          icon={RefreshCw}
+          onClick={() => {
+            void handleDataPullTest();
+          }}
+          disabled={isTestingDataPull}
+          iconClassName={isTestingDataPull ? 'animate-spin' : undefined}
+        />
+      </div>
 
       {isAuthenticated && (
         <div className="mt-5">
@@ -168,21 +219,74 @@ interface SidebarActionItemProps {
   label: string;
   icon: LucideIcon;
   onClick: () => void;
+  disabled?: boolean;
+  iconClassName?: string | undefined;
 }
 
-function SidebarActionItem({ label, icon: Icon, onClick }: SidebarActionItemProps): JSX.Element {
+function SidebarActionItem({
+  label,
+  icon: Icon,
+  onClick,
+  disabled = false,
+  iconClassName,
+}: SidebarActionItemProps): JSX.Element {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'group relative my-0.5 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors',
         'max-[1280px]:justify-center max-[1280px]:px-1.5',
-        'text-text hover:bg-white/[0.04]'
+        disabled
+          ? 'cursor-not-allowed text-text-faint opacity-70'
+          : 'text-text hover:bg-white/[0.04]'
       )}
     >
-      <Icon size={16} className="shrink-0" />
+      <Icon size={16} className={cn('shrink-0', iconClassName)} />
       <span className="max-[1280px]:hidden">{label}</span>
     </button>
   );
+}
+
+interface UpdateAgentResponse {
+  trigger?: string;
+  results?: Record<string, string>;
+  error?: string;
+  message?: string;
+  sourceFilter?: string | null;
+}
+
+function formatUpdateAgentResult(data: UpdateAgentResponse | null): string {
+  if (!data) return 'בדיקת משיכת הנתונים הסתיימה ללא תגובה מהשרת';
+  if (data.error) return data.error;
+  if (data.message) return data.message;
+
+  const results = data.results ?? {};
+  const entries = Object.entries(results);
+  if (entries.length === 0) return 'בדיקת משיכת הנתונים הסתיימה';
+
+  const failed = entries.filter(([, status]) => status !== 'success');
+  if (failed.length > 0) {
+    return `בדיקת משיכת הנתונים הסתיימה עם ${failed.length} כשלונות`;
+  }
+
+  return `בדיקת משיכת הנתונים הצליחה (${entries.length} מקורות)`;
+}
+
+async function extractFunctionError(error: unknown): Promise<string> {
+  const fallback = (error as Error)?.message || 'בדיקת משיכת הנתונים נכשלה';
+  const response = (error as { context?: { response?: Response } }).context?.response;
+  if (!response) return fallback;
+
+  try {
+    const body: unknown = await response.clone().json();
+    if (body && typeof body === 'object' && 'error' in body) {
+      return String((body as { error: unknown }).error);
+    }
+  } catch {
+    /* ignore non-JSON error bodies */
+  }
+
+  return fallback;
 }
