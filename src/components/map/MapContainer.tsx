@@ -44,6 +44,16 @@ import {
   TRANSIT_STOPS,
 } from '@/features/map/mockData';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { MAP_POPUP_CLASS, buildMapPopupHtml, type MapPopupOptions } from './mapPopup';
+
+/**
+ * Renders one of our themed map popups inside a react-leaflet `<Popup>`.
+ * The body is produced by `buildMapPopupHtml()` so the markup matches what
+ * the Mapbox GL view emits and shares the same `.mahod-popup` styling.
+ */
+function MapPopupBody({ options }: { options: MapPopupOptions }): JSX.Element {
+  return <div dangerouslySetInnerHTML={{ __html: buildMapPopupHtml(options) }} />;
+}
 
 const MARKER_TONE_COLORS = {
   red: '#ef4444',
@@ -67,18 +77,33 @@ const MARKER_ICONS = {
   infrastructure: makeMarkerIcon('purple'),
 } as const;
 
-/** ארבעה מצבי תחנת רכבת — נשארים כמעט-תמיד באותה משפחת צבע (סגול) כדי שיראו שייכים לשכבת "תשתיות". */
-const RAILWAY_STATION_STYLE: Record<
-  RailwayStationStatus,
-  { color: string; label: string; opacity: number }
+/**
+ * שתי תחנות הרכבת חולקות את שכבת "תשתיות" אבל מקבלות גוון סגול מובחן:
+ * - רכבת כבדה → משפחת violet (סגול קר/כחלחל).
+ * - רק"ל / מטרו  → משפחת fuchsia (סגול חם/ורדרד).
+ * בתוך כל משפחה יש שלוש דרגות: פעילה (כהה ובלתי שקופה), בבנייה (בינונית),
+ * מתוכננת (בהירה ושקופה יותר) כדי שייראו שייכים לאותו "מותג צבע".
+ */
+type StationKind = 'railway' | 'metro';
+
+const STATION_STYLES: Record<
+  StationKind,
+  Record<RailwayStationStatus, { color: string; label: string; opacity: number }>
 > = {
-  operational: { color: '#a855f7', label: 'תחנה פעילה', opacity: 1 },
-  under_construction: { color: '#d946ef', label: 'בבנייה', opacity: 0.95 },
-  planned: { color: '#c084fc', label: 'מתוכננת', opacity: 0.55 },
+  railway: {
+    operational: { color: '#7c3aed', label: 'תחנה פעילה', opacity: 1 },
+    under_construction: { color: '#8b5cf6', label: 'בבנייה', opacity: 0.95 },
+    planned: { color: '#a78bfa', label: 'מתוכננת', opacity: 0.55 },
+  },
+  metro: {
+    operational: { color: '#d946ef', label: 'תחנה פעילה', opacity: 1 },
+    under_construction: { color: '#e879f9', label: 'בבנייה', opacity: 0.95 },
+    planned: { color: '#f0abfc', label: 'מתוכננת', opacity: 0.55 },
+  },
 };
 
-function makeRailwayStationIcon(status: RailwayStationStatus): L.DivIcon {
-  const { color, opacity } = RAILWAY_STATION_STYLE[status];
+function makeStationIcon(kind: StationKind, status: RailwayStationStatus): L.DivIcon {
+  const { color, opacity } = STATION_STYLES[kind][status];
   return L.divIcon({
     html:
       `<div class="marker-glow" style="--marker-color: ${color};` +
@@ -89,10 +114,17 @@ function makeRailwayStationIcon(status: RailwayStationStatus): L.DivIcon {
   });
 }
 
-const RAILWAY_STATION_ICONS: Record<RailwayStationStatus, L.DivIcon> = {
-  operational: makeRailwayStationIcon('operational'),
-  under_construction: makeRailwayStationIcon('under_construction'),
-  planned: makeRailwayStationIcon('planned'),
+const STATION_ICONS: Record<StationKind, Record<RailwayStationStatus, L.DivIcon>> = {
+  railway: {
+    operational: makeStationIcon('railway', 'operational'),
+    under_construction: makeStationIcon('railway', 'under_construction'),
+    planned: makeStationIcon('railway', 'planned'),
+  },
+  metro: {
+    operational: makeStationIcon('metro', 'operational'),
+    under_construction: makeStationIcon('metro', 'under_construction'),
+    planned: makeStationIcon('metro', 'planned'),
+  },
 };
 
 /**
@@ -237,12 +269,16 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                   position={acc.position}
                   icon={MARKER_ICONS.accidents}
                 >
-                  <Popup>
-                    <strong>{acc.name}</strong>
-                    <br />
-                    תאונות: {acc.count}
-                    <br />
-                    חומרה: גבוהה
+                  <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                    <MapPopupBody
+                      options={{
+                        accent: '#ef4444',
+                        eyebrow: 'מוקד תאונות',
+                        title: acc.name,
+                        highlight: { value: acc.count, label: 'תאונות בשנה האחרונה' },
+                        badge: { tone: 'high', label: 'חומרה גבוהה' },
+                      }}
+                    />
                   </Popup>
                 </Marker>
               ))}
@@ -251,37 +287,32 @@ export function MapView({ className }: MapViewProps): JSX.Element {
 
           {activeLayers.transit && (
             <LayerGroup>
-              {transitStops.map((stop, idx) => (
-                <Marker
-                  key={stop.stopId != null ? `gtfs-${stop.stopId}` : `stop-${idx}`}
-                  position={stop.position}
-                  icon={MARKER_ICONS.transit}
-                >
-                  <Popup>
-                    <strong>{stop.name}</strong>
-                    <br />
-                    סוג: {stop.type}
-                    {stop.stopId != null && (
-                      <>
-                        <br />
-                        מזהה תחנה: {stop.stopId}
-                      </>
-                    )}
-                    {stop.stopCode != null && (
-                      <>
-                        <br />
-                        קוד: {stop.stopCode}
-                      </>
-                    )}
-                    {stop.zoneId != null && stop.zoneId !== '' && (
-                      <>
-                        <br />
-                        אזור: {stop.zoneId}
-                      </>
-                    )}
-                  </Popup>
-                </Marker>
-              ))}
+              {transitStops.map((stop, idx) => {
+                const rows: { key: string; value: string | number }[] = [];
+                if (stop.stopId != null) rows.push({ key: 'מזהה תחנה', value: stop.stopId });
+                if (stop.stopCode != null) rows.push({ key: 'קוד תחנה', value: stop.stopCode });
+                if (stop.zoneId != null && stop.zoneId !== '')
+                  rows.push({ key: 'אזור תעריף', value: stop.zoneId });
+                return (
+                  <Marker
+                    key={stop.stopId != null ? `gtfs-${stop.stopId}` : `stop-${idx}`}
+                    position={stop.position}
+                    icon={MARKER_ICONS.transit}
+                  >
+                    <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                      <MapPopupBody
+                        options={{
+                          accent: '#10b981',
+                          eyebrow: 'תחבורה ציבורית',
+                          title: stop.name,
+                          rows,
+                          badge: { tone: 'success', label: stop.type ?? 'תחנה פעילה' },
+                        }}
+                      />
+                    </Popup>
+                  </Marker>
+                );
+              })}
               {ROUTES.map((route) => (
                 <Polyline
                   key={route.name}
@@ -293,8 +324,14 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                     dashArray: '6 4',
                   }}
                 >
-                  <Popup>
-                    <strong>{route.name}</strong>
+                  <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                    <MapPopupBody
+                      options={{
+                        accent: route.color,
+                        eyebrow: 'קו תחבורה',
+                        title: route.name,
+                      }}
+                    />
                   </Popup>
                 </Polyline>
               ))}
@@ -309,8 +346,14 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                   positions={road.coords}
                   pathOptions={{ color: '#f59e0b', weight: 3.5, opacity: 0.75 }}
                 >
-                  <Popup>
-                    <strong>{road.name}</strong>
+                  <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                    <MapPopupBody
+                      options={{
+                        accent: '#f59e0b',
+                        eyebrow: 'דרכים',
+                        title: road.name,
+                      }}
+                    />
                   </Popup>
                 </Polyline>
               ))}
@@ -325,45 +368,73 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                   position={point.position}
                   icon={MARKER_ICONS.infrastructure}
                 >
-                  <Popup>
-                    <strong>{point.name}</strong>
+                  <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                    <MapPopupBody
+                      options={{
+                        accent: '#a855f7',
+                        eyebrow: 'תשתיות',
+                        title: point.name,
+                      }}
+                    />
                   </Popup>
                 </Marker>
               ))}
-              {(railwayStations ?? []).map((station: RailwayStation) => (
-                <Marker
-                  key={`rail-st-${station.stationId}`}
-                  position={station.position}
-                  icon={RAILWAY_STATION_ICONS[station.status]}
-                >
-                  <Popup>
-                    <strong>{station.name}</strong>
-                    <br />
-                    סוג: תחנת רכבת
-                    <br />
-                    סטטוס: {RAILWAY_STATION_STYLE[station.status].label}
-                    <br />
-                    מזהה: {station.stationId}
-                  </Popup>
-                </Marker>
-              ))}
-              {(metroStations ?? []).map((station: MetroStation) => (
-                <Marker
-                  key={`metro-st-${station.stationId}`}
-                  position={station.position}
-                  icon={RAILWAY_STATION_ICONS[station.status]}
-                >
-                  <Popup>
-                    <strong>{station.name}</strong>
-                    <br />
-                    סוג: תחנת מטרו/רק"ל
-                    <br />
-                    סטטוס: {RAILWAY_STATION_STYLE[station.status].label}
-                    <br />
-                    מזהה: {station.stationId}
-                  </Popup>
-                </Marker>
-              ))}
+              {(railwayStations ?? []).map((station: RailwayStation) => {
+                const style = STATION_STYLES.railway[station.status];
+                const tone: 'success' | 'medium' | 'neutral' =
+                  station.status === 'planned'
+                    ? 'neutral'
+                    : station.status === 'under_construction'
+                      ? 'medium'
+                      : 'success';
+                return (
+                  <Marker
+                    key={`rail-st-${station.stationId}`}
+                    position={station.position}
+                    icon={STATION_ICONS.railway[station.status]}
+                  >
+                    <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                      <MapPopupBody
+                        options={{
+                          accent: style.color,
+                          eyebrow: 'תחנת רכבת',
+                          title: station.name,
+                          rows: [{ key: 'מזהה תחנה', value: station.stationId }],
+                          badge: { tone, label: style.label },
+                        }}
+                      />
+                    </Popup>
+                  </Marker>
+                );
+              })}
+              {(metroStations ?? []).map((station: MetroStation) => {
+                const style = STATION_STYLES.metro[station.status];
+                const tone: 'success' | 'medium' | 'neutral' =
+                  station.status === 'planned'
+                    ? 'neutral'
+                    : station.status === 'under_construction'
+                      ? 'medium'
+                      : 'success';
+                return (
+                  <Marker
+                    key={`metro-st-${station.stationId}`}
+                    position={station.position}
+                    icon={STATION_ICONS.metro[station.status]}
+                  >
+                    <Popup className={MAP_POPUP_CLASS} maxWidth={340} minWidth={256}>
+                      <MapPopupBody
+                        options={{
+                          accent: style.color,
+                          eyebrow: 'תחנת מטרו / רק"ל',
+                          title: station.name,
+                          rows: [{ key: 'מזהה תחנה', value: station.stationId }],
+                          badge: { tone, label: style.label },
+                        }}
+                      />
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </LayerGroup>
           )}
 

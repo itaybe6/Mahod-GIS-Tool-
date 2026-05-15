@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
@@ -9,6 +9,23 @@ import logoUrl from '../../../Logo.png?url';
 import './login-page.css';
 
 type AuthMode = 'login' | 'signup';
+
+function isEmailNotConfirmedError(error: { message: string; code?: string }): boolean {
+  const code = error.code?.toLowerCase() ?? '';
+  const msg = error.message.toLowerCase();
+  return code === 'email_not_confirmed' || msg.includes('email not confirmed');
+}
+
+function mapAuthErrorToHebrew(error: { message: string; code?: string }): string {
+  if (isEmailNotConfirmedError(error)) {
+    return 'המייל עדיין לא אומת. פתח את קישור האימות שנשלח אליך, או שלח שוב מייל אימות.';
+  }
+  const msg = error.message.toLowerCase();
+  if (msg.includes('invalid login credentials') || error.code === 'invalid_credentials') {
+    return 'אימייל או סיסמה שגויים.';
+  }
+  return error.message || 'שגיאת התחברות';
+}
 
 const COPY: Record<
   AuthMode,
@@ -34,8 +51,47 @@ export function LoginPage(): JSX.Element {
   const [mode, setMode] = useState<AuthMode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
+  const [resendPending, setResendPending] = useState(false);
+  const [authHint, setAuthHint] = useState<string | null>(null);
+  const [emailForResend, setEmailForResend] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const uiCopy = useMemo(() => COPY[mode], [mode]);
+
+  function switchMode(next: AuthMode): void {
+    setMode(next);
+    setAuthHint(null);
+    setEmailForResend(null);
+  }
+
+  async function handleResendConfirmation(): Promise<void> {
+    const fromForm =
+      formRef.current != null
+        ? String(new FormData(formRef.current).get('email') ?? '').trim()
+        : '';
+    const email = fromForm || emailForResend?.trim() || '';
+    if (!email) {
+      showToast('הזן אימייל בשדה למעלה ואז לחץ שוב');
+      return;
+    }
+    setResendPending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}${ROUTES.DASHBOARD}`,
+        },
+      });
+      if (error) {
+        showToast(`שליחה נכשלה: ${error.message}`);
+        return;
+      }
+      showToast('נשלח מייל אימות. בדוק את תיבת הדואר (וגם ספאם)');
+    } finally {
+      setResendPending(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -70,7 +126,7 @@ export function LoginPage(): JSX.Element {
         });
 
         if (error) {
-          showToast(`שגיאת הרשמה: ${error.message}`);
+          showToast(`שגיאת הרשמה: ${mapAuthErrorToHebrew(error)}`);
           return;
         }
 
@@ -81,16 +137,43 @@ export function LoginPage(): JSX.Element {
           return;
         }
 
-        showToast('נרשמת בהצלחה. אם מופעל אימות מייל, בדוק את תיבת המייל שלך');
-        setMode('login');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError || !signInData.session) {
+          if (signInError && isEmailNotConfirmedError(signInError)) {
+            setEmailForResend(email);
+            setAuthHint(mapAuthErrorToHebrew(signInError));
+          } else {
+            showToast(
+              'ההרשמה בוצעה, אבל לא ניתן להיכנס כרגע. נסה להתחבר אחרי אימות המייל או שלח שוב מייל אימות.'
+            );
+          }
+          setMode('login');
+          return;
+        }
+
+        setAuthenticated(true);
+        showToast('נרשמת והתחברת בהצלחה');
+        navigate(ROUTES.DASHBOARD);
         return;
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        showToast(`שגיאת התחברות: ${error.message}`);
+        if (isEmailNotConfirmedError(error)) {
+          setEmailForResend(email);
+          setAuthHint(mapAuthErrorToHebrew(error));
+          return;
+        }
+        showToast(mapAuthErrorToHebrew(error));
         return;
       }
+
+      setAuthHint(null);
+      setEmailForResend(null);
 
       setAuthenticated(true);
       showToast('התחברת בהצלחה');
@@ -124,7 +207,7 @@ export function LoginPage(): JSX.Element {
               role="tab"
               aria-selected={mode === 'login'}
               className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => setMode('login')}
+              onClick={() => switchMode('login')}
             >
               התחברות
             </button>
@@ -133,13 +216,13 @@ export function LoginPage(): JSX.Element {
               role="tab"
               aria-selected={mode === 'signup'}
               className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
-              onClick={() => setMode('signup')}
+              onClick={() => switchMode('signup')}
             >
               הרשמה
             </button>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form ref={formRef} className="auth-form" onSubmit={handleSubmit}>
             {mode === 'signup' ? (
               <label className="auth-field">
                 <span>שם</span>
@@ -193,6 +276,20 @@ export function LoginPage(): JSX.Element {
               {pending ? 'מתחבר...' : uiCopy.submitLabel}
             </button>
           </form>
+
+          {mode === 'login' && authHint ? (
+            <div className="auth-hint" role="status">
+              <p className="auth-hint-text">{authHint}</p>
+              <button
+                type="button"
+                className="auth-resend-btn"
+                disabled={resendPending}
+                onClick={() => void handleResendConfirmation()}
+              >
+                {resendPending ? 'שולח...' : 'שלח שוב מייל אימות'}
+              </button>
+            </div>
+          ) : null}
 
           <div className="auth-divider">או</div>
 

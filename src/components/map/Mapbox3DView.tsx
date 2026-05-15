@@ -29,6 +29,7 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { useMapStore, type LastGeocodeCamera } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
+import { MAP_POPUP_CLASS, buildMapPopupHtml } from './mapPopup';
 
 /* -------------------------------------------------------------------------- */
 /*                              GeoJSON builders                              */
@@ -420,9 +421,12 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         },
       });
 
-      // Railway stations from infra_railway_stations (also part of "תשתיות").
-      // צבע מתחלף לפי ['get','status']: סגול עז = פעילה, ורוד-סגול = בבנייה,
-      // סגול חיוור = מתוכננת. גודל קטן יותר עבור מתוכננות.
+      // Railway + metro/LRT stations (both part of "תשתיות"), distinguished by
+      // `station_kind`:
+      //   • railway → משפחת violet (סגול קר/כחלחל) — #7c3aed / #8b5cf6 / #a78bfa.
+      //   • metro   → משפחת fuchsia (סגול חם/ורדרד) — #d946ef / #e879f9 / #f0abfc.
+      // בתוך כל משפחה הצבע מתבהר עם הסטטוס (פעילה → בבנייה → מתוכננת),
+      // ותחנות מתוכננות גם קטנות ושקופות יותר כדי שיובלטו פחות.
       map.addLayer({
         id: LAYERS.railwayStations,
         type: 'circle',
@@ -438,10 +442,23 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
           ],
           'circle-color': [
             'match',
-            ['get', 'status'],
-            'operational', '#a855f7',
-            'under_construction', '#d946ef',
-            'planned', '#c084fc',
+            ['get', 'station_kind'],
+            'metro', [
+              'match',
+              ['get', 'status'],
+              'operational', '#d946ef',
+              'under_construction', '#e879f9',
+              'planned', '#f0abfc',
+              '#d946ef',
+            ],
+            'railway', [
+              'match',
+              ['get', 'status'],
+              'operational', '#7c3aed',
+              'under_construction', '#8b5cf6',
+              'planned', '#a78bfa',
+              '#7c3aed',
+            ],
             '#a855f7',
           ],
           'circle-opacity': [
@@ -462,41 +479,80 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
       applyVisibility(map, useMapStore.getState().activeLayers);
 
       // Popups ---------------------------------------------------------
+      // All map popups share the modern glassmorphic RTL card from
+      // `mapPopup.ts` (see `MAP_POPUP_CLASS` / `buildMapPopupHtml`). Each layer
+      // chooses its own accent colour so the popup matches the marker tone.
       attachPopup(map, LAYERS.accidents, (props) =>
-        `<strong>${escapeHtml(String(props.name))}</strong><br/>תאונות: ${escapeHtml(
-          String(props.count)
-        )}<br/>חומרה: גבוהה`
+        buildMapPopupHtml({
+          accent: '#ef4444',
+          eyebrow: 'מוקד תאונות',
+          title: stringifyProperty(props.name),
+          highlight: { value: stringifyProperty(props.count), label: 'תאונות בשנה האחרונה' },
+          badge: { tone: 'high', label: 'חומרה גבוהה' },
+        }),
       );
       attachPopup(map, LAYERS.transit, (props) => {
-        const name = escapeHtml(stringifyProperty(props.name));
-        const typ = escapeHtml(stringifyProperty(props.type));
-        const sid =
-          props.stop_id != null
-            ? `<br/>מזהה תחנה: ${escapeHtml(stringifyProperty(props.stop_id))}`
-            : '';
-        const code =
-          props.stop_code != null
-            ? `<br/>קוד: ${escapeHtml(stringifyProperty(props.stop_code))}`
-            : '';
-        const zoneValue = stringifyProperty(props.zone_id);
-        const zone =
-          props.zone_id != null && zoneValue.length > 0 ? `<br/>אזור: ${escapeHtml(zoneValue)}` : '';
-        return `<strong>${name}</strong><br/>סוג: ${typ}${sid}${code}${zone}`;
+        const rows: { key: string; value: string }[] = [];
+        const stopId = stringifyProperty(props.stop_id);
+        if (stopId) rows.push({ key: 'מזהה תחנה', value: stopId });
+        const stopCode = stringifyProperty(props.stop_code);
+        if (stopCode) rows.push({ key: 'קוד תחנה', value: stopCode });
+        const zone = stringifyProperty(props.zone_id);
+        if (zone) rows.push({ key: 'אזור תעריף', value: zone });
+        return buildMapPopupHtml({
+          accent: '#10b981',
+          eyebrow: 'תחבורה ציבורית',
+          title: stringifyProperty(props.name),
+          rows,
+          badge: { tone: 'success', label: stringifyProperty(props.type) || 'תחנה פעילה' },
+        });
       });
-      attachPopup(map, LAYERS.infra, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
-      attachPopup(map, LAYERS.roads, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
-      attachPopup(map, LAYERS.routes, (props) => `<strong>${escapeHtml(String(props.name))}</strong>`);
+      attachPopup(map, LAYERS.infra, (props) =>
+        buildMapPopupHtml({
+          accent: '#a855f7',
+          eyebrow: 'תשתיות',
+          title: stringifyProperty(props.name),
+        }),
+      );
+      attachPopup(map, LAYERS.roads, (props) =>
+        buildMapPopupHtml({
+          accent: '#f59e0b',
+          eyebrow: 'דרכים',
+          title: stringifyProperty(props.name),
+        }),
+      );
+      attachPopup(map, LAYERS.routes, (props) =>
+        buildMapPopupHtml({
+          accent: '#0ea5e9',
+          eyebrow: 'קו תחבורה',
+          title: stringifyProperty(props.name),
+        }),
+      );
       attachPopup(map, LAYERS.railwayStations, (props) => {
-        const name = escapeHtml(stringifyProperty(props.name));
-        const statusLabel = escapeHtml(stringifyProperty(props.status_label));
-        const sid = escapeHtml(stringifyProperty(props.station_id));
-        const stationKind = stringifyProperty(props.station_kind) === 'metro' ? 'תחנת מטרו/רק"ל' : 'תחנת רכבת';
-        return (
-          `<strong>${name}</strong>` +
-          `<br/>סוג: ${stationKind}` +
-          `<br/>סטטוס: ${statusLabel}` +
-          `<br/>מזהה: ${sid}`
-        );
+        const status = stringifyProperty(props.status);
+        const isMetro = stringifyProperty(props.station_kind) === 'metro';
+        const stationLabel = isMetro ? 'תחנת מטרו / רק"ל' : 'תחנת רכבת';
+        // משפחת fuchsia ל-רק"ל, משפחת violet לרכבת — תואם לציורי ה-circle layer.
+        const accent = isMetro
+          ? status === 'planned'
+            ? '#f0abfc'
+            : status === 'under_construction'
+              ? '#e879f9'
+              : '#d946ef'
+          : status === 'planned'
+            ? '#a78bfa'
+            : status === 'under_construction'
+              ? '#8b5cf6'
+              : '#7c3aed';
+        const badgeTone: 'success' | 'medium' | 'neutral' =
+          status === 'planned' ? 'neutral' : status === 'under_construction' ? 'medium' : 'success';
+        return buildMapPopupHtml({
+          accent,
+          eyebrow: stationLabel,
+          title: stringifyProperty(props.name),
+          rows: [{ key: 'מזהה תחנה', value: stringifyProperty(props.station_id) }],
+          badge: { tone: badgeTone, label: stringifyProperty(props.status_label) || 'סטטוס לא ידוע' },
+        });
       });
 
       // If the user geocoded on Leaflet, `focusRequest` was already consumed there.
@@ -697,7 +753,13 @@ function attachPopup(
     const feature = e.features?.[0];
     if (!feature) return;
     const coords = featureCenter(feature, e.lngLat);
-    new mapboxgl.Popup({ closeButton: true, offset: 12 })
+    new mapboxgl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      offset: 16,
+      maxWidth: '340px',
+      className: MAP_POPUP_CLASS,
+    })
       .setLngLat(coords)
       .setHTML(renderHtml(feature.properties ?? {}))
       .addTo(map);
@@ -727,15 +789,6 @@ function featureCenter(
     }
   }
   return [fallback.lng, fallback.lat];
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function stringifyProperty(value: unknown): string {

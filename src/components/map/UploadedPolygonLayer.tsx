@@ -2,6 +2,17 @@ import { useEffect, useMemo, useRef } from 'react';
 import { GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { useUploadStore } from '@/stores/uploadStore';
+import { MAP_POPUP_CLASS, buildMapPopupHtml } from './mapPopup';
+
+const GEOMETRY_TYPE_LABELS: Record<string, string> = {
+  Polygon: 'פוליגון',
+  MultiPolygon: 'פוליגון מרובה',
+  LineString: 'קו',
+  MultiLineString: 'קו מרובה',
+  Point: 'נקודה',
+  MultiPoint: 'נקודה מרובה',
+  GeometryCollection: 'אוסף גיאומטריות',
+};
 
 const POLYGON_STYLE: L.PathOptions = {
   color: '#4cc9c0',
@@ -74,21 +85,19 @@ export function UploadedPolygonLayer(): JSX.Element | null {
           (feature.properties && (feature.properties.name as string)) ||
           (feature.properties && (feature.properties.NAME as string)) ||
           'פוליגון שהועלה';
+        const geometryLabel =
+          GEOMETRY_TYPE_LABELS[feature.geometry.type] ?? feature.geometry.type;
         layer.bindPopup(
-          `<strong>${escapeHtml(String(name))}</strong><br/>סוג: ${escapeHtml(
-            feature.geometry.type
-          )}`
+          buildMapPopupHtml({
+            accent: '#4cc9c0',
+            eyebrow: 'אזור שהועלה',
+            title: String(name),
+            rows: [{ key: 'סוג גיאומטריה', value: geometryLabel }],
+            badge: { tone: 'info', label: 'מקור: קובץ שהועלה' },
+          }),
+          { className: MAP_POPUP_CLASS, maxWidth: 340, minWidth: 256 },
         );
       }}
     />
   );
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }

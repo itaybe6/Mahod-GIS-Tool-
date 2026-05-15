@@ -154,11 +154,10 @@
   text-align: start;
 }
 
-/* Mapbox GL popups (3D view).
- * Without these the popup uses Mapbox's default white background while the
- * text inherits `#f9fafb` from <body>, producing the white-on-white bug.
- * We mirror the Leaflet popup styling for visual consistency between the
- * 2D (Leaflet) and 3D (Mapbox) maps.
+/* Mapbox GL popups (3D view) — base fallback for popups that do NOT opt into
+ * the modern `.mahod-popup` design. Without these the popup uses Mapbox's
+ * default white background while the text inherits `#f9fafb` from <body>,
+ * producing a white-on-white bug.
  */
 .mapboxgl-popup-content {
   background: rgba(13, 17, 23, 0.92) !important;
@@ -202,4 +201,356 @@
 }
 .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
   border-left-color: rgba(13, 17, 23, 0.92) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────── */
+/*  Mahod Popup — modern, RTL, glassmorphic card used by both Leaflet     */
+/*  and Mapbox GL via the `.mahod-popup` wrapper class. The body HTML is  */
+/*  produced by `buildMapPopupHtml()` (src/components/map/mapPopup.ts).   */
+/*  Each popup themes itself by setting `--mp-accent` inline.             */
+/* ────────────────────────────────────────────────────────────────────── */
+
+/* shared color tokens */
+:root {
+  --mp-bg-from: rgba(20, 27, 45, 0.96);
+  --mp-bg-to: rgba(8, 11, 22, 0.96);
+  --mp-bg-solid: rgba(13, 17, 28, 0.96);
+}
+
+/* Wrapper-level overrides — both engines */
+.mahod-popup .mapboxgl-popup-content,
+.mahod-popup .leaflet-popup-content-wrapper {
+  background: linear-gradient(165deg, var(--mp-bg-from) 0%, var(--mp-bg-to) 100%) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 24px 64px -8px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  font-family: 'Rubik', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  direction: rtl;
+  text-align: right;
+  min-width: 256px;
+  max-width: 320px;
+  animation: mp-popup-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Leaflet wraps body in `.leaflet-popup-content` — nuke its default margin */
+.mahod-popup .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  min-width: 256px;
+  color: #f1f5f9 !important;
+  direction: rtl;
+  text-align: right;
+  font-family: 'Rubik', system-ui, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5;
+}
+
+/* Mapbox + Leaflet tail / tip — match the gradient end colour so the
+ * arrow blends into the card. We set every direction; only the active
+ * border (per anchor side) actually renders. */
+.mahod-popup .mapboxgl-popup-tip {
+  border-top-color: var(--mp-bg-to) !important;
+  border-bottom-color: var(--mp-bg-from) !important;
+  border-left-color: var(--mp-bg-solid) !important;
+  border-right-color: var(--mp-bg-solid) !important;
+}
+.mahod-popup .leaflet-popup-tip {
+  background: var(--mp-bg-to) !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Close button — RTL: top-LEFT corner instead of top-right.
+ * Mapbox uses a real <button>, Leaflet uses an <a>. Both styled identically. */
+.mahod-popup .mapboxgl-popup-close-button,
+.mahod-popup .leaflet-popup-close-button {
+  position: absolute !important;
+  top: 10px !important;
+  left: 10px !important;
+  right: auto !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+  z-index: 10;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.15s !important;
+}
+.mahod-popup .mapboxgl-popup-close-button:hover,
+.mahod-popup .leaflet-popup-close-button:hover {
+  color: #f1f5f9 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  transform: scale(1.05);
+}
+
+/* Card layout — primitives ------------------------------------------------ */
+
+.mp-card {
+  position: relative;
+  direction: rtl;
+  text-align: right;
+  --mp-accent: #2eaa6f;
+}
+
+/* Top accent stripe with soft glow */
+.mp-card .mp-accent {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--mp-accent) 30%,
+    var(--mp-accent) 70%,
+    transparent 100%
+  );
+  box-shadow: 0 0 18px var(--mp-accent), 0 0 6px var(--mp-accent);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.mp-content {
+  padding: 18px 18px 16px;
+}
+
+.mp-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-inline-start: 32px; /* leave room for the close button on the inline-start side */
+}
+
+/* Pulsing accent dot */
+.mp-pulse {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mp-accent);
+  flex-shrink: 0;
+  margin-top: 7px;
+  box-shadow: 0 0 12px var(--mp-accent);
+}
+.mp-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--mp-accent);
+  opacity: 0.6;
+  animation: mp-ring 1.6s ease-out infinite;
+}
+
+.mp-titles {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+}
+
+.mp-eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--mp-accent);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  opacity: 0.9;
+  text-align: right;
+}
+
+.mp-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+  text-align: right;
+}
+
+/* Highlight — large stat block */
+.mp-highlight {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mp-accent) 14%, transparent) 0%,
+      color-mix(in srgb, var(--mp-accent) 4%, transparent) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--mp-accent) 22%, transparent);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.mp-highlight::before {
+  content: '';
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 80%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--mp-accent) 22%, transparent) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+.mp-highlight-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  position: relative;
+}
+.mp-highlight-label {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  font-weight: 500;
+  position: relative;
+}
+
+/* Key/value rows */
+.mp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.mp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+}
+.mp-row:last-child {
+  border-bottom: none;
+}
+.mp-key {
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-align: right;
+}
+.mp-val {
+  color: #e2e8f0;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: left; /* in an RTL row, "end" sits on the LTR side – the value */
+  max-width: 60%;
+  word-break: break-word;
+}
+
+/* Status / severity badge */
+.mp-badge-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-start;
+}
+.mp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.mp-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
+}
+.mp-badge-high {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.mp-badge-medium {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.mp-badge-low {
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.mp-badge-success {
+  background: rgba(46, 170, 111, 0.14);
+  color: #6ee7b7;
+  border: 1px solid rgba(46, 170, 111, 0.3);
+}
+.mp-badge-info {
+  background: rgba(14, 165, 233, 0.14);
+  color: #7dd3fc;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+.mp-badge-neutral {
+  background: rgba(148, 163, 184, 0.14);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Animations */
+@keyframes mp-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes mp-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mahod-popup .mapboxgl-popup-content,
+  .mahod-popup .leaflet-popup-content-wrapper {
+    animation: none;
+  }
+  .mp-pulse::after {
+    animation: none;
+  }
 }
