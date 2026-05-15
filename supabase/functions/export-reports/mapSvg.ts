@@ -275,19 +275,21 @@ function buildLegendSvg(features: MapLayerFeatures): string {
   items.push({ color: COLOR_POLYGON, label: 'אזור הניתוח', shape: 'line' });
   if (items.length === 0) return '';
 
-  const w = 168;
-  const lineH = 16;
-  const h = 12 + items.length * lineH;
+  const w = 200;
+  const lineH = 18;
+  const h = 14 + items.length * lineH;
   const x0 = 12;
   const y0 = 12;
+  const swatchCx = x0 + w - 18;
+  const textX = x0 + w - 30;
   const rows = items
     .map((it, i) => {
-      const cy = y0 + 22 + i * lineH;
+      const cy = y0 + 24 + i * lineH;
       const swatch =
         it.shape === 'dot'
-          ? `<circle cx="${x0 + w - 14}" cy="${cy - 3}" r="4" fill="${it.color}" stroke="#ffffff" stroke-width="0.8"/>`
-          : `<rect x="${x0 + w - 22}" y="${cy - 5}" width="16" height="3" fill="${it.color}"/>`;
-      return `${swatch}<text x="${x0 + w - 28}" y="${cy}" text-anchor="end" font-size="10.5" fill="#1f2933">${escapeXml(it.label)}</text>`;
+          ? `<circle cx="${swatchCx}" cy="${cy - 4}" r="4" fill="${it.color}" stroke="#ffffff" stroke-width="0.8"/>`
+          : `<rect x="${swatchCx - 8}" y="${cy - 6}" width="16" height="3" fill="${it.color}"/>`;
+      return `${swatch}<text x="${textX}" y="${cy}" text-anchor="start" direction="rtl" font-size="11" fill="#1f2933">${escapeXml(it.label)}</text>`;
     })
     .join('');
 
@@ -347,9 +349,9 @@ function buildFallbackSvg(rings: PolygonRing[], bbox: Bbox, areaKm2: number): st
   <rect width="${VIEW_W}" height="${VIEW_H}" fill="url(#mahod-grid)"/>
   <path d="${path}" fill="url(#mahod-poly-fill)" fill-rule="evenodd" stroke="#1a6fb5" stroke-width="2.2" stroke-linejoin="round"/>
   <g font-family="Rubik, Heebo, Arial, sans-serif" font-size="11" fill="#1f2933">
-    <rect x="${(VIEW_W - 200).toFixed(2)}" y="14" width="186" height="46" rx="6" fill="#ffffff" stroke="#dfe4ea"/>
-    <text x="${(VIEW_W - 16).toFixed(2)}" y="32" text-anchor="end" font-weight="600">${escapeXml(areaLabel)}</text>
-    <text x="${(VIEW_W - 16).toFixed(2)}" y="50" text-anchor="end" fill="#6b7785">${escapeXml(coordLabel)}</text>
+    <rect x="${(VIEW_W - 210).toFixed(2)}" y="14" width="196" height="46" rx="6" fill="#ffffff" stroke="#dfe4ea"/>
+    <text x="${(VIEW_W - 24).toFixed(2)}" y="32" text-anchor="start" direction="rtl" font-weight="600">${escapeXml(areaLabel)}</text>
+    <text x="${(VIEW_W - 24).toFixed(2)}" y="50" text-anchor="start" direction="rtl" fill="#6b7785">${escapeXml(coordLabel)}</text>
   </g>
 </svg>`;
 }
@@ -379,9 +381,11 @@ export async function buildPolygonMapSvg(
     return buildFallbackSvg(rings, bbox, areaKm2);
   }
 
-  // Center the polygon inside the viewport — viewport's top-left in world px:
-  const viewX0 = px0 - (VIEW_W - polyW) / 2;
-  const viewY0 = py0 - (VIEW_H - polyH) / 2;
+  // Center the polygon inside the viewport — viewport's top-left in world px.
+  // Snap to integer pixels so OSM tiles render on whole-pixel boundaries
+  // (eliminates sub-pixel anti-aliasing that makes features look "off").
+  const viewX0 = Math.round(px0 - (VIEW_W - polyW) / 2);
+  const viewY0 = Math.round(py0 - (VIEW_H - polyH) / 2);
 
   const txMin = Math.floor(viewX0 / TILE_SIZE);
   const txMax = Math.floor((viewX0 + VIEW_W - 1) / TILE_SIZE);
@@ -463,13 +467,13 @@ export async function buildPolygonMapSvg(
   </g>
   ${legendSvg}
   <g font-family="Rubik, Heebo, Arial, sans-serif" font-size="11" fill="#1f2933">
-    <rect x="${(VIEW_W - 200).toFixed(2)}" y="14" width="186" height="46" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#dfe4ea"/>
-    <text x="${(VIEW_W - 16).toFixed(2)}" y="32" text-anchor="end" font-weight="600">${escapeXml(areaLabel)}</text>
-    <text x="${(VIEW_W - 16).toFixed(2)}" y="50" text-anchor="end" fill="#6b7785">${escapeXml(coordLabel)}</text>
+    <rect x="${(VIEW_W - 210).toFixed(2)}" y="14" width="196" height="46" rx="6" fill="#ffffff" fill-opacity="0.94" stroke="#dfe4ea"/>
+    <text x="${(VIEW_W - 24).toFixed(2)}" y="32" text-anchor="start" direction="rtl" font-weight="600">${escapeXml(areaLabel)}</text>
+    <text x="${(VIEW_W - 24).toFixed(2)}" y="50" text-anchor="start" direction="rtl" fill="#6b7785">${escapeXml(coordLabel)}</text>
   </g>
   <g font-family="Arial, sans-serif" font-size="9" fill="#1f2933">
-    <rect x="${(VIEW_W - 200).toFixed(2)}" y="${VIEW_H - 20}" width="195" height="14" fill="#ffffff" fill-opacity="0.85"/>
-    <text x="${(VIEW_W - 8).toFixed(2)}" y="${VIEW_H - 9}" text-anchor="end">${escapeXml(attribution)}</text>
+    <rect x="${(VIEW_W - 210).toFixed(2)}" y="${VIEW_H - 20}" width="200" height="14" fill="#ffffff" fill-opacity="0.85"/>
+    <text x="${(VIEW_W - 14).toFixed(2)}" y="${VIEW_H - 9}" text-anchor="end" direction="ltr">${escapeXml(attribution)}</text>
   </g>
 </svg>`;
 }
