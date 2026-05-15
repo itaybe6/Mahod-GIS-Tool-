@@ -179,8 +179,6 @@ export type Database = {
           agency_phone: string | null;
           agency_lang: string | null;
           agency_timezone: string | null;
-          agency_fare_url: string | null;
-          source_version: string | null;
           updated_at: string;
         };
         Insert: {
@@ -190,8 +188,6 @@ export type Database = {
           agency_phone?: string | null;
           agency_lang?: string | null;
           agency_timezone?: string | null;
-          agency_fare_url?: string | null;
-          source_version?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -201,8 +197,6 @@ export type Database = {
           agency_phone?: string | null;
           agency_lang?: string | null;
           agency_timezone?: string | null;
-          agency_fare_url?: string | null;
-          source_version?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -302,7 +296,6 @@ export type Database = {
           stop_lat: number | null;
           stop_lon: number | null;
           location_type: number | null;
-          parent_station: number | null;
           zone_id: string | null;
           geom: PgGeometry | null;
           source_version: string | null;
@@ -316,7 +309,6 @@ export type Database = {
           stop_lat?: number | null;
           stop_lon?: number | null;
           location_type?: number | null;
-          parent_station?: number | null;
           zone_id?: string | null;
           geom?: PgGeometry | null;
           source_version?: string | null;
@@ -330,7 +322,6 @@ export type Database = {
           stop_lat?: number | null;
           stop_lon?: number | null;
           location_type?: number | null;
-          parent_station?: number | null;
           zone_id?: string | null;
           geom?: PgGeometry | null;
           source_version?: string | null;
@@ -452,48 +443,6 @@ export type Database = {
           },
         ];
       };
-      infra_metro_lines: {
-        Row: {
-          id: number;
-          line_id: string;
-          line_name: string;
-          line_color: string | null;
-          line_type: string | null;
-          status: InfraLineStatus;
-          expected_open: number | null;
-          geom: PgGeometry | null;
-          source_url: string | null;
-          source_version: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: number;
-          line_id: string;
-          line_name: string;
-          line_color?: string | null;
-          line_type?: string | null;
-          status?: InfraLineStatus;
-          expected_open?: number | null;
-          geom?: PgGeometry | null;
-          source_url?: string | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          id?: number;
-          line_id?: string;
-          line_name?: string;
-          line_color?: string | null;
-          line_type?: string | null;
-          status?: InfraLineStatus;
-          expected_open?: number | null;
-          geom?: PgGeometry | null;
-          source_url?: string | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       infra_metro_stations: {
         Row: {
           station_id: string;
@@ -519,50 +468,6 @@ export type Database = {
           station_id?: string;
           station_name?: string;
           line_id?: string | null;
-          status?: InfraLineStatus;
-          geom?: PgGeometry | null;
-          source_url?: string | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'infra_metro_stations_line_id_fkey';
-            columns: ['line_id'];
-            isOneToOne: false;
-            referencedRelation: 'infra_metro_lines';
-            referencedColumns: ['line_id'];
-          },
-        ];
-      };
-      infra_railway_lines: {
-        Row: {
-          id: number;
-          line_id: string | null;
-          line_name: string | null;
-          line_type: string | null;
-          status: InfraLineStatus;
-          geom: PgGeometry | null;
-          source_url: string | null;
-          source_version: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: number;
-          line_id?: string | null;
-          line_name?: string | null;
-          line_type?: string | null;
-          status?: InfraLineStatus;
-          geom?: PgGeometry | null;
-          source_url?: string | null;
-          source_version?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          id?: number;
-          line_id?: string | null;
-          line_name?: string | null;
-          line_type?: string | null;
           status?: InfraLineStatus;
           geom?: PgGeometry | null;
           source_url?: string | null;

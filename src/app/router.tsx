@@ -12,12 +12,15 @@ import { SourcesPage } from '@/features/sources/SourcesPage';
 import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RecentFilesPage } from '@/features/recent-files/RecentFilesPage';
+import { ProtectedRoute } from './ProtectedRoute';
 
 /**
  * Centralized route table.
  *
  * Every page is wrapped in <AppShell> so the chrome (sidebar / right panel)
  * stays mounted while only the main pane swaps content.
+ * All routes except /login are wrapped in <ProtectedRoute> which redirects
+ * unauthenticated users to the login page.
  */
 export function AppRouter(): JSX.Element {
   return (
@@ -26,78 +29,96 @@ export function AppRouter(): JSX.Element {
       <Route
         path={ROUTES.RECENT_FILES}
         element={
-          <AppShell>
-            <RecentFilesPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell>
+              <RecentFilesPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.DASHBOARD}
         element={
-          <AppShell>
-            <DashboardPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell>
+              <DashboardPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.MAP}
         element={
-          <AppShell>
-            <MapPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell>
+              <MapPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.STATISTICS}
         element={
-          <AppShell>
-            <StatisticsPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell hideRightPanel>
+              <StatisticsPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route path={ROUTES.ACCIDENTS} element={<Navigate to={ROUTES.STATISTICS} replace />} />
       <Route
         path={ROUTES.TRANSIT}
         element={
-          <AppShell>
-            <TransitPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell hideRightPanel>
+              <TransitPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.ROUTE_PLANNER}
         element={
-          <AppShell rightPanel={<RoutePlannerPanel />} showMobileRightPanel={false}>
-            <RoutePlannerPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell rightPanel={<RoutePlannerPanel />} showMobileRightPanel={false}>
+              <RoutePlannerPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.INFRASTRUCTURE}
         element={
-          <AppShell>
-            <InfrastructurePage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell hideRightPanel>
+              <InfrastructurePage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.SOURCES}
         element={
-          <AppShell>
-            <SourcesPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell hideRightPanel>
+              <SourcesPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route
         path={ROUTES.HISTORY}
         element={
-          <AppShell>
-            <UpdateHistoryPage />
-          </AppShell>
+          <ProtectedRoute>
+            <AppShell hideRightPanel>
+              <UpdateHistoryPage />
+            </AppShell>
+          </ProtectedRoute>
         }
       />
       <Route path="/export" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-      <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+      <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
     </Routes>
   );
 }

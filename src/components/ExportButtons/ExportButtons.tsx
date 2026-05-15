@@ -103,17 +103,14 @@ export function ExportButtons({
   );
 
   const items: Array<{ format: ExportFormat; idleLabel: string }> = [
-    { format: 'geojson', idleLabel: 'הורדת GeoJSON' },
-    { format: 'csv', idleLabel: 'EXCEL' },
-    { format: 'html', idleLabel: 'הורדת HTML' },
+    { format: 'geojson', idleLabel: 'GeoJSON' },
+    { format: 'csv', idleLabel: 'Excel' },
+    { format: 'html', idleLabel: 'HTML' },
   ];
 
   return (
     <div className="flex flex-col gap-2">
-      {baseReason != null && (
-        <p className="text-xs leading-relaxed text-text-dim">{baseReason}</p>
-      )}
-      <div className={cn('flex flex-wrap gap-2')}>
+      <div className={cn('flex gap-2')}>
         {items.map(({ format, idleLabel }) => {
           const disabled = isFormatDisabled(format) || busyFormat != null;
           const busy = busyFormat === format;
@@ -123,7 +120,7 @@ export function ExportButtons({
               type="button"
               variant="default"
               size="sm"
-              className="font-bold"
+              className="flex-1 font-bold"
               disabled={disabled}
               title={formatDisabledTitle(format)}
               onClick={() => {

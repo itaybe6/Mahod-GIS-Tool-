@@ -85,7 +85,6 @@ interface CountRow {
   st4: string; az4: string;
   st5: string; az5: string;
   st6: string; az6: string;
-  comments: string;
 }
 
 interface DataRow {
@@ -110,7 +109,6 @@ interface CountDbRow {
   executor: string | null;
   arms_count: number | null;
   arms_data: Array<{ arm: number; name: string; azimuth: number }> | null;
-  comments: string | null;
   x_itm: number;
   y_itm: number;
   geom: string;           // WKT — converted server-side via SQL function
@@ -297,7 +295,6 @@ async function seedCounts(zipPath: string): Promise<number[]> {
       executor:     nullIfEmpty(r.executor),
       arms_count:   r.arms ? parseInt(r.arms, 10) : null,
       arms_data:    buildArmsData(r),
-      comments:     nullIfEmpty(r.comments),
       x_itm:        x,
       y_itm:        y,
       geom:         itmToWgs84Wkt(x, y),

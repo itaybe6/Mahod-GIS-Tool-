@@ -22,8 +22,8 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { unzipSync } from "https://esm.sh/[email protected]";
-import proj4 from "https://esm.sh/[email protected]";
+import { unzipSync } from "https://esm.sh/fflate";
+import proj4 from "https://esm.sh/proj4";
 import { downloadResource, pickResourceByName } from "../ckan.ts";
 import type { CkanPackage } from "../ckan.ts";
 import type { Adapter, AdapterRunResult } from "../types.ts";
@@ -85,7 +85,6 @@ interface CountCsv {
   st4: string; az4: string;
   st5: string; az5: string;
   st6: string; az6: string;
-  comments: string;
 }
 
 interface VolumeCsv {
@@ -118,7 +117,6 @@ interface CountDbRow {
   executor: string | null;
   arms_count: number | null;
   arms_data: Array<{ arm: number; name: string; azimuth: number }> | null;
-  comments: string | null;
   x_itm: number;
   y_itm: number;
   geom: string;           // WKT — accepted by PostGIS as a geometry literal
@@ -387,7 +385,6 @@ const vehicleCountsAdapter: Adapter = {
         executor:    nullIfEmpty(r.executor),
         arms_count:  r.arms ? (parseInt(r.arms, 10) || null) : null,
         arms_data:   buildArmsData(r),
-        comments:    nullIfEmpty(r.comments),
         x_itm:       x,
         y_itm:       y,
         geom:        itmToWgs84Wkt(x, y),

@@ -1,7 +1,6 @@
 /**
  * כל טיפוסי הטבלאות, הוויוס והפונקציה לפי
- * `supabase/migrations/20260513120000_initial_schema.sql`
- * והמיגרציות האינקרמנטליות תחת `supabase/migrations`.
+ * `docs/schema-context.sql` (תמונת מצב מעודכנת של public) ו־`supabase/migrations/`.
  *
  * המבנה המלא (PostgREST / Supabase) מוגדר ב־`src/lib/supabase/types.ts` כ־`Database`.
  * כאן רק ייצוא נוח לשמות קצרים — עדכן את `Database` כשהמיגרציה משתנה.
@@ -80,14 +79,6 @@ export type InfraRailwayStationsRow = Tables['infra_railway_stations']['Row'];
 export type InfraRailwayStationsInsert = Tables['infra_railway_stations']['Insert'];
 export type InfraRailwayStationsUpdate = Tables['infra_railway_stations']['Update'];
 
-export type InfraRailwayLinesRow = Tables['infra_railway_lines']['Row'];
-export type InfraRailwayLinesInsert = Tables['infra_railway_lines']['Insert'];
-export type InfraRailwayLinesUpdate = Tables['infra_railway_lines']['Update'];
-
-export type InfraMetroLinesRow = Tables['infra_metro_lines']['Row'];
-export type InfraMetroLinesInsert = Tables['infra_metro_lines']['Insert'];
-export type InfraMetroLinesUpdate = Tables['infra_metro_lines']['Update'];
-
 export type InfraMetroStationsRow = Tables['infra_metro_stations']['Row'];
 export type InfraMetroStationsInsert = Tables['infra_metro_stations']['Insert'];
 export type InfraMetroStationsUpdate = Tables['infra_metro_stations']['Update'];
@@ -130,8 +121,6 @@ export type TableRows = {
   road_authorities: RoadAuthoritiesRow;
   road_authority_network: RoadAuthorityNetworkRow;
   infra_railway_stations: InfraRailwayStationsRow;
-  infra_railway_lines: InfraRailwayLinesRow;
-  infra_metro_lines: InfraMetroLinesRow;
   infra_metro_stations: InfraMetroStationsRow;
   municipalities: MunicipalitiesRow;
   traffic_count_stations: TrafficCountStationsRow;

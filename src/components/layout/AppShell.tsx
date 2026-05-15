@@ -20,6 +20,13 @@ export interface AppShellProps {
    * Defaults to `true`.
    */
   showMobileRightPanel?: boolean;
+  /**
+   * Completely hide the right panel (desktop column + mobile sheet) for pages
+   * that have no use for the upload/analyze workflow — statistics, transit,
+   * infrastructure, sources, history, etc.
+   * Defaults to `false`.
+   */
+  hideRightPanel?: boolean;
 }
 
 /**
@@ -37,6 +44,7 @@ export function AppShell({
   children,
   rightPanel,
   showMobileRightPanel = true,
+  hideRightPanel = false,
 }: AppShellProps): JSX.Element {
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const mobileSidebarOpen = useUIStore((s) => s.mobileSidebarOpen);
@@ -66,12 +74,12 @@ export function AppShell({
     <div className="flex h-[100dvh] w-screen flex-col overflow-hidden">
       <LoadingBar />
 
-      <MobileTopBar showRightPanelToggle={showMobileRightPanel} />
+      <MobileTopBar showRightPanelToggle={!hideRightPanel && showMobileRightPanel} />
 
       <div
         className={cn(
           'flex min-h-0 flex-1 overflow-hidden lg:grid',
-          rightPanelOpen
+          !hideRightPanel && rightPanelOpen
             ? 'lg:grid-cols-[64px_1fr_320px] xl:grid-cols-[220px_1fr_340px]'
             : 'lg:grid-cols-[64px_1fr] xl:grid-cols-[220px_1fr]'
         )}
@@ -86,7 +94,7 @@ export function AppShell({
         </main>
 
         {/* Desktop right panel */}
-        {rightPanelOpen && (
+        {!hideRightPanel && rightPanelOpen && (
           <div className="hidden lg:contents">
             <RightPanel>{rightPanel}</RightPanel>
           </div>
@@ -104,7 +112,7 @@ export function AppShell({
       </MobileDrawer>
 
       {/* Mobile right-panel bottom sheet. */}
-      {showMobileRightPanel && (
+      {!hideRightPanel && showMobileRightPanel && (
         <MobileSheet
           open={mobileRightPanelOpen}
           onClose={() => setMobileRightPanelOpen(false)}

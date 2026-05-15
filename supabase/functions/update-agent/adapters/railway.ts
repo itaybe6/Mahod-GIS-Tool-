@@ -12,8 +12,8 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import shp from "https://esm.sh/shpjs@6.2.0";
-import proj4 from "https://esm.sh/proj4@2.20.8";
+import shp from "https://esm.sh/shpjs";
+import proj4 from "https://esm.sh/proj4";
 import { downloadResource, downloadResourceAsText, pickResourceByName } from "../ckan.ts";
 import type { CkanPackage } from "../ckan.ts";
 import type { Adapter, AdapterRunResult } from "../types.ts";
