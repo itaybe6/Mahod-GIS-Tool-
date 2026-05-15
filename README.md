@@ -16,7 +16,7 @@ Hebrew (RTL) GIS analysis tool for Israeli transportation data — built for Mah
 
 **משיכת נתונים, סקריפטים וסוכן עדכון:** החלק שהיה לי **הכי קשה בהתחלה** הוא **משיכת הנתונים וייבואם לטבלאות**. בתחילה נכנסתי **באופן ידני** למקורות המידע, **הורדתי קבצי ZIP**, ובניתי **סקריפטים** שקוראים את הקבצים וממלאים את הטבלאות במסד. את **בניית סוכן העדכון** השארתי **לסוף**. רק בסוף התברר לי שאפשר **למשוך נתונים באופן אוטומטי דרך API** — בלי הזרימה הידנית שבניתי בהתחלה — מה שמתאים יותר לעדכונים שוטפים ולתחזוקה.
 
-**Testing — Unit Tests:** סעיף ה-Unit tests **מומש** לאחר השלמת שאר הפרויקט. נכתבו **142 בדיקות** ב-**14 קבצי test** — כולן עוברות (`npm test`). ה-coverage מגיע ל-**82%+ statements ו-lines, 60%+ branches ו-95%+ functions** על הקבצים הנבדקים — ראו פירוט בסעיף Testing. **Integration tests** ו-**E2E** (Playwright / Cypress) לא יושמו עקב חריגה ממכסת Cursor.
+**Testing — Unit Tests:** סעיף ה-Unit tests **מומש** לאחר השלמת שאר הפרויקט. נכתבו **142 בדיקות** ב-**14 קבצי test** — כולן עוברות (`npm test`). ה-coverage מגיע ל-**82%+ statements ו-lines, 60%+ branches ו-95%+ functions** על הקבצים הנבדקים (ראו פירוט בסעיף Testing בהמשך). **Integration tests** ו-**E2E** (Playwright / Cypress) לא יושמו עקב חריגה ממכסת Cursor — ראו הסבר בסעיף Testing.
 
 ---
 
@@ -205,9 +205,8 @@ mahod-gis/
 │   │   ├── accidents/      # `/accidents`
 │   │   ├── transit/        # `/transit`
 │   │   ├── infrastructure/ # `/infrastructure`
-│   │   ├── sources/        # `/sources` — data sources overview
+│   │   ├── sources/        # `/sources` — data sources from DB + last-updated per source
 │   │   ├── recent-files/   # `/recent-files` — saved files for authenticated users
-│   │   ├── history/        # `/history` — update history
 │   │   └── export/         # ExportPanel (right rail under “שכבות מידע”)
 │   ├── lib/                # External-library config
 │   │   ├── export/         # `buildExportPayload`, `fetchExportBlob` → `export-reports`
@@ -279,12 +278,23 @@ ESLint additionally bans `any` (`@typescript-eslint/no-explicit-any: error`).
 | `/transit`         | `TransitPage`         | Placeholder (coming soon)                |
 | `/route-planner`   | `RoutePlannerPage`    | תכנון מסלול A→B (GTFS חלקי — ראו הערה למטה) |
 | `/infrastructure`  | `InfrastructurePage`  | Placeholder (coming soon)                |
-| `/sources`         | `SourcesPage`         | Live (static info on planned sources)    |
+| `/sources`         | `SourcesPage`         | Live — רשימת `data_sources` מ־Supabase; לכל מקור: סטטוס, **תאריך עדכון אחרון**, קישור למקור |
 | `/recent-files`    | `RecentFilesPage`     | קבצים שמורים למשתמש מחובר               |
-| `/history`         | `UpdateHistoryPage`   | Placeholder                              |
+| `/history`         | —                     | מפנה ל־`/sources` (קישורים ישנים)        |
 | `/export`          | —                     | Redirects to `/` (ייצוא רק מפאנל ימני מתחת לשכבות מידע) |
 
 **תכנון מסלול (A→B):** בדיקת תוצאות מסלול מומלצת עם **נקודות באזור יבנה** — לא נטען למסד ה־GTFS המלא בגלל **מגבלות זיכרון** בזמן ההכנסה, ולכן לא כל הארץ מיוצגת באותה רמת כיסוי; באזור יבנה אפשר לאמת שהחיפוש וה־RPC מחזירים מסלולים סבירים.
+
+### מקורות מידע (`/sources`) — מתי כל מקור התעדכן
+
+בעמוד **מקורות מידע** מוצגת לכל רשומה ב־`data_sources` שורה **«עודכן לאחרונה»** בעברית (`he-IL`), לפי סדר עדיפות:
+
+1. `last_updated_at` — מועד שבו הנתונים מהמקור נטענו/עודכנו בהצלחה (סוכן העדכון).
+2. אם ריק — `last_checked_at` (בדיקה אחרונה של הסוכן).
+3. אם גם ריק — `updated_at` (עדכון שורה במסד).
+4. אם אין אף ערך — מוצג **—**.
+
+כך אפשר לראות בממשק מתי כל מקור מידע התעדכן בפועל, בלי עמוד היסטוריה נפרד.
 
 Unmatched routes redirect to `/`.
 
@@ -342,6 +352,62 @@ The `.env.example` lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_
 GeoJSON נבנה מאותם RPC של PostGIS כמו `analyze-area` (`query_*_in_polygon`), עם `properties.layer` לכל פיצ'ר. CSV, HTML ו-PDF משתמשים באותו מבנה נתוני סיכום מהקליינט; PDF אינו מריץ Chromium בשרת (לא נתמך ב-Edge).
 
 פריסה: `supabase functions deploy export-reports` (וראו `supabase/functions/export-reports/README.md`).
+
+---
+
+## Testing
+
+### הרצה
+
+```bash
+npm test                # מריץ את כל הבדיקות
+npm run test:coverage   # מריץ + מדפיס דוח כיסוי (coverage)
+```
+
+### כיסוי הבדיקות (Coverage)
+
+נכתבו **142 בדיקות** ב-**14 קבצי test** — כולן עוברות.
+
+| מדד | תוצאה |
+| --- | --- |
+| Statements | **82.32%** |
+| Branches | **60.13%** |
+| Functions | **95.04%** |
+| Lines | **82.27%** |
+
+### מה נבדק ומה לא
+
+**נבדק (Unit tests):**
+
+| קובץ / מודול | כיסוי | מה נבדק |
+| --- | --- | --- |
+| `src/lib/utils.ts` | ~100% | `cn()` (מיזוג Tailwind), `formatNumber()` |
+| `src/lib/export/supabaseFunctionsUrl.ts` | 100% | `normalizeSupabaseUrl()`, `getExportReportsFunctionUrl()` |
+| `src/lib/export/buildExportPayload.ts` | ~80% | חישוב שטח פוליגון, אגרגציה של תאונות/כבישים/תחב"צ |
+| `src/stores/authStore.ts` | ~85% | `setAuthenticated`, `setGuest`, `logout`, localStorage |
+| `src/stores/uiStore.ts` | ~100% | sidebar, toast, mobile overlays, top loader |
+| `src/stores/uploadStore.ts` | ~100% | parsing, polygon, error, municipalities, clear |
+| `src/stores/analysisStore.ts` | ~100% | selection, toggleLayer, beginRun, setResults, clearResults |
+| `src/stores/filterStore.ts` | ~100% | searchQuery, dateRange, severities, toggleSeverity, reset |
+| `src/stores/routePlannerStore.ts` | ~88% | endpoints, swap, pickingMode, routing flow, optionId |
+| `src/stores/mapStore.ts` | ~74% | toggleLayer, setLayer, activeDomain, requestMapFocus |
+| `src/constants/` | ~100% | colors, routes, mapConfig values |
+| `src/statistics/calculations.ts` | ~81% | formatNumber, formatPercent, safePercent, chart data |
+
+**לא נבדק (מוחרג מה-coverage בכוונה):**
+
+| מודול | סיבה |
+| --- | --- |
+| `src/hooks/use*.ts` | Hooks מלאי DOM (`localStorage`, `matchMedia`, `setTimeout`) — דורשים `@testing-library/react` |
+| `src/lib/gis/`, `src/lib/gtfs/` | ניתוח shapefile / GTFS — תלות בקבצי בינארי ו-Node.js streams |
+| `src/lib/mapbox/` | תלות ב-Mapbox GL JS — API browser-native |
+| `src/lib/export/fetchExportBlob.ts` | קריאת `fetch` לשרת — דורש mock של network |
+| `src/statistics/queries.ts` | שאילתות Supabase DB — Integration tests |
+| `src/features/`, `src/components/`, `src/app/` | קומפוננטות React — E2E / component tests |
+
+### Integration tests ו-E2E
+
+**לא יושמו** — Integration tests (mock ל-Supabase) ו-E2E (Playwright / Cypress) לא נכתבו. הסיבה: חריגה ממכסת חשבון Cursor במהלך עבודת הבית גרמה לי לעצור לפני שלב זה.
 
 ---
 
