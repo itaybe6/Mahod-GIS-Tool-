@@ -49,9 +49,9 @@ describe('routes', () => {
     expect(ROUTES.TRANSIT).toBe('/transit');
   });
 
-  it('ROUTES has RECENT_FILES and HISTORY', () => {
+  it('ROUTES has RECENT_FILES and SOURCES', () => {
     expect(ROUTES.RECENT_FILES).toBe('/recent-files');
-    expect(ROUTES.HISTORY).toBe('/history');
+    expect(ROUTES.SOURCES).toBe('/sources');
   });
 
   it('all routes start with /', () => {

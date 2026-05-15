@@ -9,7 +9,6 @@ import { RoutePlannerPage } from '@/features/route-planner/RoutePlannerPage';
 import { RoutePlannerPanel } from '@/features/route-planner/components/RoutePlannerPanel';
 import { InfrastructurePage } from '@/features/infrastructure/InfrastructurePage';
 import { SourcesPage } from '@/features/sources/SourcesPage';
-import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RecentFilesPage } from '@/features/recent-files/RecentFilesPage';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -107,16 +106,7 @@ export function AppRouter(): JSX.Element {
           </ProtectedRoute>
         }
       />
-      <Route
-        path={ROUTES.HISTORY}
-        element={
-          <ProtectedRoute>
-            <AppShell hideRightPanel>
-              <UpdateHistoryPage />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/history" element={<Navigate to={ROUTES.SOURCES} replace />} />
       <Route path="/export" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
       <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
     </Routes>

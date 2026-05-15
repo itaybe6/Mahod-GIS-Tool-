@@ -6,7 +6,6 @@ import {
   Navigation,
   Building2,
   Database,
-  History,
   LogIn,
   LogOut,
   FolderClock,
@@ -35,18 +34,15 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'ניתוח נתונים',
     items: [
       { to: ROUTES.DASHBOARD, label: 'דשבורד ראשי', icon: LayoutDashboard },
-      { to: ROUTES.STATISTICS, label: 'סטטיסטיקות', icon: AlertTriangle, badge: '2.8K' },
+      { to: ROUTES.STATISTICS, label: 'סטטיסטיקות', icon: AlertTriangle },
       { to: ROUTES.TRANSIT, label: 'תחבורה ציבורית', icon: Bus },
-      { to: ROUTES.ROUTE_PLANNER, label: 'תכנון מסלול', icon: Navigation, badge: 'חדש' },
+      { to: ROUTES.ROUTE_PLANNER, label: 'תכנון מסלול', icon: Navigation },
       { to: ROUTES.INFRASTRUCTURE, label: 'תשתיות', icon: Building2 },
     ],
   },
   {
     title: 'ניהול נתונים',
-    items: [
-      { to: ROUTES.SOURCES, label: 'מקורות מידע', icon: Database },
-      { to: ROUTES.HISTORY, label: 'היסטוריית עדכונים', icon: History },
-    ],
+    items: [{ to: ROUTES.SOURCES, label: 'מקורות מידע', icon: Database }],
   },
 ];
 
@@ -150,7 +146,7 @@ export function Sidebar({ variant = 'desktop' }: SidebarProps): JSX.Element {
       <div className="mt-auto border-t border-border pt-4 text-center text-[11px] leading-[1.6] text-text-faint">
         <div>
           ITAY BEN YAIR
-          <br />© 2025
+          <br />© 2026
         </div>
       </div>
     </aside>

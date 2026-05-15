@@ -205,9 +205,8 @@ mahod-gis/
 │   │   ├── accidents/      # `/accidents`
 │   │   ├── transit/        # `/transit`
 │   │   ├── infrastructure/ # `/infrastructure`
-│   │   ├── sources/        # `/sources` — data sources overview
+│   │   ├── sources/        # `/sources` — data sources from DB + last-updated per source
 │   │   ├── recent-files/   # `/recent-files` — saved files for authenticated users
-│   │   ├── history/        # `/history` — update history
 │   │   └── export/         # ExportPanel (right rail under “שכבות מידע”)
 │   ├── lib/                # External-library config
 │   │   ├── export/         # `buildExportPayload`, `fetchExportBlob` → `export-reports`

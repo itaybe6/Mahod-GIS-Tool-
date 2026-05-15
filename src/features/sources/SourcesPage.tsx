@@ -12,6 +12,24 @@ const STATUS_DOT: Record<DataSourcesRow['status'], string> = {
   disabled: 'bg-text-faint',
 };
 
+const sourceUpdatedFormatter = new Intl.DateTimeFormat('he-IL', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+function effectiveSourceTimestamp(row: DataSourcesRow): string | null {
+  return row.last_updated_at ?? row.last_checked_at ?? row.updated_at ?? null;
+}
+
+function formatSourceUpdatedAt(row: DataSourcesRow): string {
+  const iso = effectiveSourceTimestamp(row);
+  if (!iso) return '—';
+  return sourceUpdatedFormatter.format(new Date(iso));
+}
+
 export function SourcesPage(): JSX.Element {
   const { data: rows, isPending, isError, error, refetch, isFetching } = useDataSources();
 
@@ -46,8 +64,8 @@ export function SourcesPage(): JSX.Element {
         <div className="min-w-0">
           <h1 className="text-base font-semibold text-text sm:text-lg">מקורות מידע</h1>
           <p className="mt-0.5 max-w-3xl text-[12.5px] text-text-dim sm:text-sm">
-            רישום המקורות מטבלת <span className="font-mono text-[11px] text-text-faint">data_sources</span> — עדכונים
-            ומעקב אחרי סוכן הטעינה.
+            רישום המקורות מטבלת <span className="font-mono text-[11px] text-text-faint">data_sources</span> — סטטוס,
+            תאריך עדכון אחרון וקישור למקור.
           </p>
         </div>
         <button
@@ -87,18 +105,23 @@ export function SourcesPage(): JSX.Element {
           {rows.map((s) => (
             <div
               key={s.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-1 px-4 py-3 transition-colors hover:bg-bg-2"
+              className="flex flex-col gap-2 rounded-lg border border-border bg-bg-1 px-4 py-3 transition-colors hover:bg-bg-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
             >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className={cn('size-2 shrink-0 rounded-full', STATUS_DOT[s.status])} />
-                <span className="truncate text-sm font-medium text-text">{s.display_name}</span>
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', STATUS_DOT[s.status])} />
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-text">{s.display_name}</span>
+                  <span className="mt-0.5 block text-xs text-text-dim">
+                    עודכן לאחרונה: {formatSourceUpdatedAt(s)}
+                  </span>
+                </div>
               </div>
               {s.source_url && (
                 <a
                   href={s.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-brand-teal/30 bg-brand-teal/10 px-2.5 py-1 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/20"
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-md border border-brand-teal/30 bg-brand-teal/10 px-2.5 py-1 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/20 sm:self-center"
                 >
                   קישור למקור
                   <ExternalLink size={12} />

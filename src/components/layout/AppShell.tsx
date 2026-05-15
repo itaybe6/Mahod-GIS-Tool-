@@ -23,7 +23,7 @@ export interface AppShellProps {
   /**
    * Completely hide the right panel (desktop column + mobile sheet) for pages
    * that have no use for the upload/analyze workflow — statistics, transit,
-   * infrastructure, sources, history, etc.
+   * infrastructure, sources, etc.
    * Defaults to `false`.
    */
   hideRightPanel?: boolean;

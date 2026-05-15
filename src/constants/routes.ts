@@ -13,7 +13,6 @@ export const ROUTES = {
   ROUTE_PLANNER: '/route-planner',
   INFRASTRUCTURE: '/infrastructure',
   SOURCES: '/sources',
-  HISTORY: '/history',
   RECENT_FILES: '/recent-files',
 } as const;
 
