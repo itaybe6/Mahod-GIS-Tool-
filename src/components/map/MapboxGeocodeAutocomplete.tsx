@@ -14,6 +14,7 @@ import {
   type GeocodeFeatureNormalized,
 } from '@/lib/mapbox/geocoding';
 import { fetchGtfsStopSuggestions } from '@/lib/gtfs/stopSuggestions';
+import { cn } from '@/lib/utils';
 
 export type GeocodeFieldVariant = 'city' | 'address' | 'place' | 'full';
 
@@ -48,6 +49,8 @@ export interface MapboxGeocodeAutocompleteProps {
    * this keeps Hebrew station names working in the route planner.
    */
   includeGtfsStops?: boolean;
+  /** White text + placeholder (e.g. route planner side panel on dark cards). */
+  whiteText?: boolean;
 }
 
 export function MapboxGeocodeAutocomplete({
@@ -59,6 +62,7 @@ export function MapboxGeocodeAutocomplete({
   onPick,
   onInputChange,
   includeGtfsStops = false,
+  whiteText = false,
 }: MapboxGeocodeAutocompleteProps): JSX.Element {
   const listId = useId();
   const [value, setValue] = useState('');
@@ -226,7 +230,12 @@ export function MapboxGeocodeAutocomplete({
   return (
     <div className={`flex min-w-0 flex-col gap-0.5 ${className ?? ''}`}>
       {showLabel && (
-        <label className="truncate text-[10px] font-medium uppercase tracking-wide text-text-faint">
+        <label
+          className={cn(
+            'truncate text-[10px] font-medium uppercase tracking-wide',
+            whiteText ? 'text-white' : 'text-text-faint'
+          )}
+        >
           {label}
         </label>
       )}
@@ -258,7 +267,12 @@ export function MapboxGeocodeAutocomplete({
           }}
           onBlur={scheduleClose}
           onKeyDown={handleKeyDown}
-          className="h-9 w-full min-w-[120px] rounded-lg border border-border bg-surface px-2.5 text-[13px] text-text outline-none transition-colors placeholder:text-text-faint focus:border-brand-teal disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(
+            'h-9 w-full min-w-[120px] rounded-lg border border-border bg-surface px-2.5 text-[13px] outline-none transition-colors focus:border-brand-teal disabled:cursor-not-allowed disabled:opacity-50',
+            whiteText
+              ? 'text-white placeholder:text-white'
+              : 'text-text placeholder:text-text-faint'
+          )}
         />
         {open && suggestions.length > 0 && (
           <ul
@@ -291,7 +305,12 @@ export function MapboxGeocodeAutocomplete({
         {loading &&
           (Boolean(token) || includeGtfsStops) &&
           value.trim().length >= MIN_QUERY_CHARS && (
-          <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-text-faint">
+          <span
+            className={cn(
+              'pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px]',
+              whiteText ? 'text-white' : 'text-text-faint'
+            )}
+          >
             …
           </span>
         )}

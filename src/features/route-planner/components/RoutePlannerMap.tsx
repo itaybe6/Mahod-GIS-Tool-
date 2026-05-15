@@ -84,7 +84,7 @@ export function RoutePlannerMap(): JSX.Element {
 
       {pickingMode && (
         <div className="pointer-events-none absolute start-1/2 top-3 z-[1000] -translate-x-1/2">
-          <div className="pointer-events-auto rounded-full border border-brand-teal/40 bg-bg-2/95 px-3 py-1.5 text-[12px] text-text shadow-lg backdrop-blur">
+          <div className="pointer-events-auto rounded-full border border-brand-teal/40 bg-bg-2/95 px-3 py-1.5 text-[12px] text-white shadow-lg backdrop-blur">
             לחץ על המפה כדי לבחור{' '}
             <span className="font-semibold text-brand-teal">
               {pickingMode === 'origin' ? 'נקודת מוצא (A)' : 'יעד (B)'}
@@ -92,7 +92,7 @@ export function RoutePlannerMap(): JSX.Element {
             <button
               type="button"
               onClick={() => useRoutePlannerStore.getState().setPickingMode(null)}
-              className="ms-2 rounded-full border border-border bg-bg-1 px-2 py-0.5 text-[10.5px] text-text-faint hover:text-danger"
+              className="ms-2 rounded-full border border-border bg-bg-1 px-2 py-0.5 text-[10.5px] text-white hover:text-danger"
             >
               ביטול
             </button>

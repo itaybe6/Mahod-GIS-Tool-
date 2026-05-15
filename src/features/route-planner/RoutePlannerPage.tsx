@@ -18,10 +18,10 @@ export function RoutePlannerPage(): JSX.Element {
             <Navigation size={18} />
           </span>
           <div>
-            <h1 className="text-[15px] font-semibold leading-tight text-text">
+            <h1 className="text-[15px] font-semibold leading-tight text-white">
               תכנון מסלול A→B
             </h1>
-            <p className="text-[11.5px] text-text-faint">
+            <p className="text-[11.5px] text-white">
               מציאת קווי תח"צ ישירים בין שתי נקודות, על בסיס נתוני GTFS של ישראל.
             </p>
           </div>

@@ -57,26 +57,33 @@ async function fetchMetroStations(): Promise<MetroStation[]> {
   }));
 }
 
+export interface InfraStationsQueryOptions {
+  /** When false, skips the network request (e.g. map has no polygon / geocode context yet). */
+  enabled?: boolean;
+}
+
 /**
  * כל תחנות הרכבת הכבדה (~110 רשומות) — נתון בסיס שלא משתנה לעיתים קרובות,
  * אז staleTime ארוך. כשאין Supabase מוגדר ה-query מושבת והקליינט נופל ל-fallback.
  */
-export function useRailwayStations() {
+export function useRailwayStations(options?: InfraStationsQueryOptions) {
+  const enabled = options?.enabled !== false;
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchRailwayStations,
-    enabled: isSupabaseConfigured,
+    enabled: isSupabaseConfigured && enabled,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 6,
   });
 }
 
 /** כל תחנות המטרו/רק"ל שנמצאות בטבלת infra_metro_stations. */
-export function useMetroStations() {
+export function useMetroStations(options?: InfraStationsQueryOptions) {
+  const enabled = options?.enabled !== false;
   return useQuery({
     queryKey: METRO_QUERY_KEY,
     queryFn: fetchMetroStations,
-    enabled: isSupabaseConfigured,
+    enabled: isSupabaseConfigured && enabled,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 6,
   });

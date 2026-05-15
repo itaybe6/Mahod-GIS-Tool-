@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { extractPolygonGeometry } from './polygon.ts';
 import { mergeLayerGeoJson } from './geojsonMerge.ts';
+import { renderReportCsv } from './csvReport.ts';
 import { renderReportHtml } from './htmlReport.ts';
 import { generateReportPdf } from './pdfReport.ts';
 import type { ReportData } from './types.ts';
@@ -157,8 +158,8 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   const format = body.format;
-  if (format !== 'geojson' && format !== 'html' && format !== 'pdf') {
-    return jsonResponse({ error: 'format חייב להיות geojson, html או pdf' }, 400);
+  if (format !== 'geojson' && format !== 'csv' && format !== 'html' && format !== 'pdf') {
+    return jsonResponse({ error: 'format חייב להיות geojson, csv, html או pdf' }, 400);
   }
 
   let polygonGeometry: object;
@@ -228,6 +229,18 @@ serve(async (req: Request): Promise<Response> => {
     report = parseReportData(body.analysis);
   } catch (err) {
     return jsonResponse({ error: (err as Error).message }, 400);
+  }
+
+  if (format === 'csv') {
+    const csv = renderReportCsv(report);
+    const filename = asciiFilename('csv');
+    return new Response(csv, {
+      headers: {
+        ...CORS_HEADERS,
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
   }
 
   if (format === 'html') {

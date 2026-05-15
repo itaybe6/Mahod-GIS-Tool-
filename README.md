@@ -107,14 +107,14 @@ mahod-gis/
 ├── supabase/
 │   └── functions/
 │       ├── analyze-area/   # Polygon → spatial RPCs (GTFS / accidents / roads / …)
-│       └── export-reports/ # GeoJSON + HTML + PDF exports (Task 8)
+│       └── export-reports/ # GeoJSON + CSV + HTML (+ PDF ב-API) (Task 8)
 ├── public/                 # static assets served as-is (favicon, robots, etc.)
 ├── src/
 │   ├── app/                # App-level wiring: <App>, <Providers>, route table
 │   ├── components/         # Reusable, presentation-only components
 │   │   ├── ui/             # shadcn-style primitives (button, card, input, toggle)
 │   │   ├── layout/         # AppShell, Header, Sidebar, RightPanel
-│   │   ├── ExportButtons/  # GeoJSON / HTML / PDF download buttons
+│   │   ├── ExportButtons/  # GeoJSON / EXCEL (CSV) / HTML download buttons
 │   │   ├── map/            # MapContainer (Leaflet), MapTypeSelector, LayerToggle, etc.
 │   │   ├── upload/         # Dropzone + quick-upload buttons
 │   │   ├── data/           # StatPill, LayerRow, ResultRow (used by RightPanel)
@@ -196,10 +196,13 @@ ESLint additionally bans `any` (`@typescript-eslint/no-explicit-any: error`).
 | `/map`             | `MapPage`             | Live (full-bleed map)                    |
 | `/accidents`       | `AccidentsPage`       | Placeholder (coming soon)                |
 | `/transit`         | `TransitPage`         | Placeholder (coming soon)                |
+| `/route-planner`   | `RoutePlannerPage`    | תכנון מסלול A→B (GTFS חלקי — ראו הערה למטה) |
 | `/infrastructure`  | `InfrastructurePage`  | Placeholder (coming soon)                |
 | `/sources`         | `SourcesPage`         | Live (static info on planned sources)    |
 | `/history`         | `UpdateHistoryPage`   | Placeholder                              |
 | `/export`          | —                     | Redirects to `/` (ייצוא רק מפאנל ימני מתחת לשכבות מידע) |
+
+**תכנון מסלול (A→B):** בדיקת תוצאות מסלול מומלצת עם **נקודות באזור יבנה** — לא נטען למסד ה־GTFS המלא בגלל **מגבלות זיכרון** בזמן ההכנסה, ולכן לא כל הארץ מיוצגת באותה רמת כיסוי; באזור יבנה אפשר לאמת שהחיפוש וה־RPC מחזירים מסלולים סבירים.
 
 Unmatched routes redirect to `/`.
 
@@ -231,7 +234,7 @@ The `.env.example` already lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABA
    - File handler in `components/upload/Dropzone.tsx`.
    - Stream to Supabase Storage; trigger an Edge Function that parses GTFS / CSV into the relational tables.
 6. **Export**
-   - Edge Function `export-reports`: `POST /functions/v1/export-reports` עם `format` + פוליגון + שכבות; HTML/PDF משתמשים ב־payload סיכום מהניתוח (`buildExportAnalysisPayload`).
+   - Edge Function `export-reports`: `POST /functions/v1/export-reports` עם `format` + פוליגון + שכבות; CSV/HTML/PDF משתמשים ב־payload סיכום מהניתוח (`buildExportAnalysisPayload`).
 
 ---
 
@@ -240,10 +243,11 @@ The `.env.example` already lists the env vars (`VITE_SUPABASE_URL`, `VITE_SUPABA
 | Format  | Use case                           | Transport |
 | ------- | ---------------------------------- | --------- |
 | GeoJSON | Import to QGIS / ArcGIS / Mapbox  | `POST /functions/v1/export-reports` עם `"format":"geojson"` |
-| HTML    | Branded RTL report in the browser | `POST …` עם `"format":"html"` + `analysis` |
-| PDF     | Print-oriented summary           | `POST …` עם `"format":"pdf"` + `analysis` (PDF דרך `pdf-lib` + Noto Hebrew ב-Edge; לא Puppeteer) |
+| CSV     | טבלת נתונים (UTF-8) לפתיחה באקסל / גיליון | `POST …` עם `"format":"csv"` + `analysis` |
+| HTML    | דוח ממותג RTL בדפדפן / הורדה           | `POST …` עם `"format":"html"` + `analysis` |
+| PDF     | סיכום להדפסה (API בלבד ב-UI הנוכחי)   | `POST …` עם `"format":"pdf"` + `analysis` (PDF דרך `pdf-lib` + Noto Hebrew ב-Edge; לא Puppeteer) |
 
-GeoJSON נבנה מאותם RPC של PostGIS כמו `analyze-area` (`query_*_in_polygon`), עם `properties.layer` לכל פיצ'ר. HTML ו-PDF משתמשים באותו מבנה נתוני סיכום מהקליינט; PDF אינו מריץ Chromium בשרת (לא נתמך ב-Edge), ולכן העיצוב ב-PDF פשוט יותר מה-HTML אך עם אותם KPI וטבלאות ליבה.
+GeoJSON נבנה מאותם RPC של PostGIS כמו `analyze-area` (`query_*_in_polygon`), עם `properties.layer` לכל פיצ'ר. CSV, HTML ו-PDF משתמשים באותו מבנה נתוני סיכום מהקליינט; PDF אינו מריץ Chromium בשרת (לא נתמך ב-Edge).
 
 פריסה: `supabase functions deploy export-reports` (וראו `supabase/functions/export-reports/README.md`).
 

@@ -79,7 +79,7 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
         >
           <Icon size={12} />
         </span>
-        <label className="text-[11px] font-medium uppercase tracking-wide text-text-faint">
+        <label className="text-[11px] font-medium uppercase tracking-wide text-white">
           {meta.label}
         </label>
         <button
@@ -91,7 +91,7 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
             'ms-auto inline-flex h-6 items-center gap-1 rounded-full border px-2 text-[10.5px] transition-colors',
             isPicking
               ? 'border-brand-teal/60 bg-brand-teal/15 text-brand-teal'
-              : 'border-border bg-bg-1 text-text-faint hover:border-brand-teal/40 hover:text-brand-teal'
+              : 'border-border bg-bg-1 text-white hover:border-brand-teal/40 hover:text-brand-teal'
           )}
         >
           <MousePointerClick size={11} />
@@ -104,15 +104,16 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
         placeholder={meta.placeholder}
         onPick={handlePick}
         includeGtfsStops={isSupabaseConfigured}
+        whiteText
       />
 
       {value && (
         <div className="flex items-center gap-2 rounded-md border border-border/70 bg-bg-1 px-2 py-1.5 text-[11.5px]">
           <span className={cn('h-2 w-2 rounded-full', meta.tone.split(' ')[0])} aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-text" title={value.label}>
+          <span className="min-w-0 flex-1 truncate text-white" title={value.label}>
             {value.label}
           </span>
-          <span className="hidden font-mono text-[10px] text-text-faint sm:inline">
+          <span className="hidden font-mono text-[10px] text-white sm:inline">
             {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
           </span>
           <button
@@ -120,7 +121,7 @@ export function EndpointField({ kind }: EndpointFieldProps): JSX.Element {
             onClick={() => setEndpoint(null)}
             aria-label="הסר"
             title="הסר"
-            className="grid h-5 w-5 place-items-center rounded text-text-faint transition-colors hover:bg-danger/15 hover:text-danger"
+            className="grid h-5 w-5 place-items-center rounded text-white transition-colors hover:bg-danger/15 hover:text-danger"
           >
             <X size={12} />
           </button>

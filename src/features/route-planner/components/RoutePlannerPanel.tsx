@@ -42,7 +42,7 @@ export function RoutePlannerPanel(): JSX.Element {
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="text-white">
             <Navigation size={12} className="text-brand-teal" />
             תכנון מסלול A→B
           </CardTitle>
@@ -52,7 +52,7 @@ export function RoutePlannerPanel(): JSX.Element {
             disabled={!origin && !destination && !results}
             title="איפוס"
             aria-label="איפוס"
-            className="grid place-items-center text-text-faint transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
+            className="grid place-items-center text-white transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw size={13} />
           </button>
@@ -67,7 +67,7 @@ export function RoutePlannerPanel(): JSX.Element {
               disabled={!origin && !destination}
               title="החלף מוצא ויעד"
               aria-label="החלף מוצא ויעד"
-              className="grid h-7 w-7 place-items-center rounded-full border border-border bg-bg-1 text-text-faint transition-colors hover:border-brand-teal hover:text-brand-teal disabled:cursor-not-allowed disabled:opacity-40"
+              className="grid h-7 w-7 place-items-center rounded-full border border-border bg-bg-1 text-white transition-colors hover:border-brand-teal hover:text-brand-teal disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowDownUp size={13} />
             </button>
@@ -105,7 +105,7 @@ export function RoutePlannerPanel(): JSX.Element {
             </p>
           )}
           {!ready && isSupabaseConfigured && (
-            <p className="flex items-start gap-1.5 text-[10.5px] leading-snug text-text-faint">
+            <p className="flex items-start gap-1.5 text-[10.5px] leading-snug text-white">
               <Info size={11} className="mt-px shrink-0" />
               בחר נקודת מוצא ויעד. ניתן להקליד כתובת או ללחוץ על המפה.
             </p>
@@ -115,29 +115,31 @@ export function RoutePlannerPanel(): JSX.Element {
 
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="text-white">
             {status === 'running' && (
-              <Loader2 size={12} className="animate-spin text-text-faint" />
+              <Loader2 size={12} className="animate-spin text-white" />
             )}
             {status === 'ready' && options.length > 0 && (
               <CheckCircle2 size={12} className="text-success" />
             )}
             {status === 'error' && <TriangleAlert size={12} className="text-danger" />}
-            {status === 'idle' && <Info size={12} className="text-text-faint" />}
+            {status === 'idle' && <Info size={12} className="text-white" />}
             תוצאות
           </CardTitle>
           {status === 'ready' && durationMs != null && (
-            <span className="font-mono text-[10px] text-text-faint">{durationMs}ms</span>
+            <span className="font-mono text-[10px] text-white">{durationMs}ms</span>
           )}
         </CardHeader>
 
         {status === 'idle' && (
-          <p className="text-[11.5px] leading-snug text-text-faint">
+          <p className="text-[11.5px] leading-snug text-white">
             התוצאות יוצגו כאן אחרי הריצה — האופציות ממוינות לפי מרחק הליכה כולל מינימלי.
           </p>
         )}
         {status === 'running' && (
-          <p className="text-[11.5px] text-text-dim">מריץ <code>plan_transit_route</code>…</p>
+          <p className="text-[11.5px] text-white">
+            מריץ <code>plan_transit_route</code>…
+          </p>
         )}
         {status === 'error' && error && (
           <div className="rounded border border-danger/30 bg-danger/10 px-2.5 py-2 text-[11.5px] leading-snug text-danger">
@@ -150,7 +152,7 @@ export function RoutePlannerPanel(): JSX.Element {
           </div>
         )}
         {status === 'ready' && options.length === 0 && (
-          <p className="text-[11.5px] leading-snug text-text-faint">
+          <p className="text-[11.5px] leading-snug text-white">
             לא נמצא מסלול תח"צ ישיר. נסה להגדיל את מרחק ההליכה או לבחור נקודות סמוכות יותר לתחנות.
           </p>
         )}
@@ -162,13 +164,13 @@ export function RoutePlannerPanel(): JSX.Element {
             <p
               className={cn(
                 'mt-0.5 flex items-start gap-2 rounded-lg border border-border/60 bg-bg-1 px-3 py-2.5',
-                'text-[12px] leading-relaxed text-text-dim'
+                'text-[12px] leading-relaxed text-white'
               )}
             >
-              <Info size={14} className="mt-0.5 shrink-0 text-text-faint" aria-hidden />
+              <Info size={14} className="mt-0.5 shrink-0 text-white" aria-hidden />
               <span>
                 חישוב זמן משוער: הליכה ~1.4 מ׳/ש׳, אוטובוס ~22 קמ״ש, רכבת/רק״ל ~50 קמ״ש. ללוחות זמנים אמיתיים
-                נדרש <code className="rounded bg-bg-2 px-1 font-mono text-[11px]">stop_times</code> במסד. הסבר על בדיקות
+                נדרש <code className="rounded bg-bg-2 px-1 font-mono text-[11px] text-white">stop_times</code> במסד. הסבר על בדיקות
                 ומגבלות נתונים נמצא בקובץ README של תכנון המסלול במאגר.
               </span>
             </p>

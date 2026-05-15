@@ -1,5 +1,5 @@
 /**
- * Payload sent to the `export-reports` Edge Function for HTML/PDF rendering.
+ * Payload sent to the `export-reports` Edge Function for CSV/HTML summary export.
  * Built on the client from `AnalysisResults` + upload metadata.
  */
 export interface ExportAnalysisPayload {
@@ -35,7 +35,7 @@ export interface ExportAnalysisPayload {
   };
 }
 
-export type ExportFormat = 'geojson' | 'html' | 'pdf';
+export type ExportFormat = 'geojson' | 'csv' | 'html';
 
 export interface ExportRequestBody {
   format: ExportFormat;

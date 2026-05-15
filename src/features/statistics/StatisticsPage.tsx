@@ -1,4 +1,4 @@
-import { AlertTriangle, Sparkles } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { DangerRankingTable } from './components/danger-ranking-table';
 import { DemographicCharts } from './components/demographic-charts';
@@ -38,8 +38,21 @@ export function StatisticsPage(): JSX.Element {
                 ניתוח סיכוני תאונות לפי אזורים סטטיסטיים
               </h1>
               <p className="mt-2 max-w-2xl text-[13px] leading-6 text-text-dim">
-                כל הנתונים מחושבים מ־`public.accidents` דרך views ו־RPC ב־Supabase. הטבלה מייצגת
-                תאי TAZ סטטיסטיים, לא תאונות בודדות.
+                כל הנתונים מחושבים מ־<span className="font-mono text-[12px] text-text">public.accidents</span> דרך
+                views ו־RPC ב־Supabase. הטבלה מייצגת אגרגציה לפי תאי TAZ (מערך{' '}
+                <span className="font-mono text-[12px] text-text">accid_taz</span>
+                ), לא נקודות תאונה בודדות.
+              </p>
+              <p className="mt-3">
+                <a
+                  href="https://data.gov.il/he/datasets/ministry_of_transport/accid_taz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-teal hover:underline"
+                >
+                  מקור הנתונים ב־data.gov.il — accid_taz
+                  <ExternalLink size={14} className="opacity-80" aria-hidden />
+                </a>
               </p>
             </div>
           </div>

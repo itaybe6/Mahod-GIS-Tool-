@@ -18,7 +18,7 @@ export interface ExportLayerSelection {
 export interface ExportButtonsProps {
   polygon: FeatureCollection | null;
   layers: ExportLayerSelection;
-  /** Built in `ExportPanel` when analysis status is `ready`; required for HTML/PDF. */
+  /** Built in `ExportPanel` when analysis status is `ready`; required for Excel (CSV) and HTML. */
   analysisPayload: ExportAnalysisPayload | null;
   disabledReason?: string;
 }
@@ -58,7 +58,7 @@ export function ExportButtons({
   const baseDisabled = baseReason != null || polygon == null;
 
   const formatNeedsAnalysis = (format: ExportFormat): boolean =>
-    format === 'html' || format === 'pdf';
+    format === 'csv' || format === 'html';
 
   const isFormatDisabled = (format: ExportFormat): boolean => {
     if (baseDisabled) return true;
@@ -69,7 +69,7 @@ export function ExportButtons({
   const formatDisabledTitle = (format: ExportFormat): string | undefined => {
     if (baseReason != null) return baseReason;
     if (formatNeedsAnalysis(format) && analysisPayload == null) {
-      return 'יש להריץ ניתוח אזור מוצלח לפני ייצוא HTML או PDF.';
+      return 'יש להריץ ניתוח אזור מוצלח לפני ייצוא ל-Excel או HTML.';
     }
     return undefined;
   };
@@ -78,7 +78,7 @@ export function ExportButtons({
     async (format: ExportFormat) => {
       if (polygon == null || !isSupabaseConfigured || apiBaseUrl === '') return;
       if (formatNeedsAnalysis(format) && analysisPayload == null) {
-        showToast('יש להריץ ניתוח אזור לפני ייצוא HTML או PDF', 4000);
+        showToast('יש להריץ ניתוח אזור לפני ייצוא ל-Excel או HTML', 4000);
         return;
       }
       setBusyFormat(format);
@@ -102,12 +102,15 @@ export function ExportButtons({
     [analysisPayload, apiBaseUrl, layers, polygon, showToast, sourceName]
   );
 
-  const items: Array<{ format: ExportFormat; label: string; variant?: 'default' | 'outline' }> =
-    [
-      { format: 'geojson', label: 'GeoJSON', variant: 'outline' },
-      { format: 'html', label: 'HTML', variant: 'outline' },
-      { format: 'pdf', label: 'PDF', variant: 'default' },
-    ];
+  const items: Array<{
+    format: ExportFormat;
+    idleLabel: string;
+    variant?: 'default' | 'outline';
+  }> = [
+    { format: 'geojson', idleLabel: 'הורדת GeoJSON', variant: 'outline' },
+    { format: 'csv', idleLabel: 'EXCEL', variant: 'default' },
+    { format: 'html', idleLabel: 'הורדת HTML', variant: 'outline' },
+  ];
 
   return (
     <div className="flex flex-col gap-2">
@@ -115,7 +118,7 @@ export function ExportButtons({
         <p className="text-xs leading-relaxed text-text-dim">{baseReason}</p>
       )}
       <div className={cn('flex flex-wrap gap-2')}>
-        {items.map(({ format, label, variant }) => {
+        {items.map(({ format, idleLabel, variant }) => {
           const disabled = isFormatDisabled(format) || busyFormat != null;
           const busy = busyFormat === format;
           return (
@@ -130,7 +133,7 @@ export function ExportButtons({
                 void onExport(format);
               }}
             >
-              {busy ? 'מייצא…' : `הורדת ${label}`}
+              {busy ? 'מייצא…' : idleLabel}
             </Button>
           );
         })}

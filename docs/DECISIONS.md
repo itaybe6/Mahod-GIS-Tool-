@@ -102,18 +102,19 @@ Leaflet, שמשמש כמנוע המפה הראשי (DARK / OSM / SAT / TOPO), ל
 
 ## Output formats (Task 8)
 
-**Chosen:** GeoJSON, HTML, PDF — כולם דרך **Supabase Edge Function** `export-reports` (אין שירות Node נפרד ב-`backend/`).
+**Chosen:** GeoJSON, CSV (טבלת סיכום UTF-8), HTML (דוח RTL ממותג), PDF — כולם דרך **Supabase Edge Function** `export-reports` (אין שירות Node נפרד ב-`backend/`).
 
 **Rationale:**
 
-- HTML is mandatory by spec (mission section 8 footer).
+- CSV מספק טבלת נתונים פשוטה לפתיחה באקסל / גיליון אלקטרוני, בלי מורכבות של ייצוא Excel מרובה גיליונות.
+- HTML נותן דוח עשיר להצגה/הדפסה מהדפדפן, לצד ה-CSV השטוח.
 - GeoJSON is nearly free thanks to PostGIS `ST_AsGeoJSON()` inside the existing `query_*_in_polygon` RPCs (the function merges per-layer FeatureCollections and tags `properties.layer`).
-- PDF must be downloadable in environments where **Puppeteer/Chromium cannot run** (Supabase Edge blocks browser automation). We therefore generate PDF with **`pdf-lib`** plus an embedded **Noto Sans Hebrew** font fetched at runtime; the HTML report remains the rich, print-styled artifact, while the PDF mirrors the same KPI tables and authority breakdown in a simpler vector layout.
+- PDF must be downloadable in environments where **Puppeteer/Chromium cannot run** (Supabase Edge blocks browser automation). We therefore generate PDF with **`pdf-lib`** plus an embedded **Noto Sans Hebrew** font fetched at runtime; CSV/HTML carry the same summary metrics (flat rows vs. styled report), while the PDF presents KPI tables and authority breakdown in a vector layout.
 
 **Rejected alternatives:**
 
 - Shapefile: four-file format, encoding pain with Hebrew, weak TypeScript library support.
-- Excel: multi-sheet formatting is heavier work than the three chosen formats combined.
+- Excel (xlsx): multi-sheet formatting is heavier work than CSV + PDF combined; CSV covers the tabular export need.
 - KML/KMZ: less standard than GeoJSON for tooling this project targets.
 - Puppeteer on Edge: fails at runtime (`PermissionDenied` / missing Chromium); would force a separate always-on Node host, which we are not adding for this iteration.
 
