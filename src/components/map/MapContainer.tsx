@@ -20,7 +20,6 @@ import {
 import { TILE_LAYERS } from '@/lib/leaflet/tile-layers';
 import { useMapStore } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
-import { MapLegend } from './MapLegend';
 import { MapMunicipalityBadge } from './MapMunicipalityBadge';
 import { Mapbox3DView } from './Mapbox3DView';
 import { UploadedPolygonLayer } from './UploadedPolygonLayer';
@@ -441,7 +440,6 @@ export function MapView({ className }: MapViewProps): JSX.Element {
         </LeafletMap>
       )}
 
-      <MapLegend dateRange="01.04.2025 — 10.05.2025" title="צפיפות תאונות — אזור גוש דן" hideSeverityBar={is3D} />
       <MapMunicipalityBadge />
       {!is3D && <DrawModeOverlay />}
     </div>
