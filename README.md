@@ -58,6 +58,29 @@ npm run build
 npm run preview
 ```
 
+**הרצה עם Docker** — בניית Image סטטי והרצה דרך Nginx:
+
+```powershell
+docker build -t mahod-gis:local `
+  --build-arg VITE_SUPABASE_URL="https://<project-ref>.supabase.co" `
+  --build-arg VITE_SUPABASE_ANON_KEY="<anon-key>" `
+  --build-arg VITE_APP_NAME="Mahod GIS" `
+  --build-arg VITE_APP_VERSION="2.4.1" .
+
+docker run -d --name mahod-gis -p 127.0.0.1::80 mahod-gis:local
+docker port mahod-gis 80/tcp
+```
+
+הפקודה האחרונה מציגה את הפורט המקומי שנבחר אוטומטית, למשל `127.0.0.1:57296`; לאחר מכן פותחים בדפדפן `http://localhost:<port>`.
+
+עצירה וניקוי:
+
+```powershell
+docker rm -f mahod-gis
+```
+
+**הערה לגבי `docker-compose`:** בדרישות הופיעה פריסה עם `docker-compose`, אבל בפרויקט הזה אין backend מקומי נפרד שמריצים לצד ה-frontend. צד השרת מבוסס על **Supabase מנוהל** — Auth, Postgres, Storage ו-Edge Functions — ולכן ה-Dockerfile מספיק לפריסת ה-frontend. אם רוצים להריץ גם Supabase מקומי מלא לצורכי פיתוח, זה כבר תרחיש נפרד של Supabase CLI/containers ולא חלק מהפריסה הרגילה של האפליקציה.
+
 פקודות נוספות: `npm run typecheck`, `npm run lint`, `npm run format` — ראו טבלת הסקריפטים בהמשך המסמך.
 
 ---
