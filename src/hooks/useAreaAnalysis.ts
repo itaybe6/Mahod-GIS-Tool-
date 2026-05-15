@@ -1,10 +1,8 @@
 import { useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAnalysisStore, type AnalysisResults, type LayerResult } from '@/stores/analysisStore';
-import { useMapStore } from '@/stores/mapStore';
 import { useUploadStore } from '@/stores/uploadStore';
 import { useUIStore } from '@/stores/uiStore';
-import type { LayerKey } from '@/types/common';
 
 interface EdgeResponse {
   results?: Partial<Record<keyof AnalysisResults, LayerResult>>;
@@ -88,12 +86,6 @@ export function useAreaAnalysis(): {
       const results = (data.results ?? {}) as Parameters<typeof setResults>[0];
       const durationMs = data.durationMs ?? Math.round(performance.now() - startedAt);
       setResults(results, durationMs);
-
-      for (const k of Object.keys(results) as (keyof AnalysisResults)[]) {
-        if (results[k]) {
-          useMapStore.getState().setLayer(k as LayerKey, true);
-        }
-      }
 
       if (selection.accidents && !data.errors?.accidents) {
         const acc = results.accidents;

@@ -10,7 +10,6 @@ import { useUIStore } from '@/stores/uiStore';
  */
 export function UploadStatus(): JSX.Element | null {
   const status = useUploadStore((s) => s.status);
-  const sourceName = useUploadStore((s) => s.sourceName);
   const featureCount = useUploadStore((s) => s.featureCount);
   const bbox = useUploadStore((s) => s.bbox);
   const reprojectedFrom = useUploadStore((s) => s.reprojectedFrom);
@@ -49,7 +48,9 @@ export function UploadStatus(): JSX.Element | null {
           {status === 'error' && (
             <AlertTriangle size={14} className="shrink-0 text-red-400" />
           )}
-          <span className="truncate font-medium">{sourceName ?? 'ללא שם'}</span>
+          {status === 'parsing' && (
+            <span className="truncate font-medium text-text-dim">מעבד קובץ…</span>
+          )}
         </div>
         {(status === 'ready' || status === 'error') && (
           <button

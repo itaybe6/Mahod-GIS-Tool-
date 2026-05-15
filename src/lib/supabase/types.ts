@@ -496,33 +496,30 @@ export type Database = {
       };
       infra_metro_stations: {
         Row: {
-          id: number;
           station_id: string;
           station_name: string;
           line_id: string | null;
-          status: string;
+          status: InfraLineStatus;
           geom: PgGeometry | null;
           source_url: string | null;
           source_version: string | null;
           updated_at: string;
         };
         Insert: {
-          id?: number;
           station_id: string;
           station_name: string;
           line_id?: string | null;
-          status?: string;
+          status?: InfraLineStatus;
           geom?: PgGeometry | null;
           source_url?: string | null;
           source_version?: string | null;
           updated_at?: string;
         };
         Update: {
-          id?: number;
           station_id?: string;
           station_name?: string;
           line_id?: string | null;
-          status?: string;
+          status?: InfraLineStatus;
           geom?: PgGeometry | null;
           source_url?: string | null;
           source_version?: string | null;
@@ -952,6 +949,17 @@ export type Database = {
           station_name: string;
           status: InfraLineStatus;
           is_active: boolean;
+          lon: number;
+          lat: number;
+        }>;
+      };
+      list_metro_stations: {
+        Args: Record<string, never>;
+        Returns: Array<{
+          station_id: string;
+          station_name: string;
+          status: InfraLineStatus;
+          line_id: string | null;
           lon: number;
           lat: number;
         }>;

@@ -1,7 +1,6 @@
-import { Pencil, MousePointer2, Move, Trash2, AlertTriangle } from 'lucide-react';
+import { Pencil, MousePointer2, Move, Trash2 } from 'lucide-react';
 import { useUploadStore } from '@/stores/uploadStore';
 import { useUIStore } from '@/stores/uiStore';
-import { useMapStore } from '@/stores/mapStore';
 
 /**
  * Right-rail content shown when the user picked "ציור על המפה". It mirrors
@@ -17,35 +16,6 @@ export function DrawHelper(): JSX.Element {
   const polygon = useUploadStore((s) => s.polygon);
   const clear = useUploadStore((s) => s.clear);
   const showToast = useUIStore((s) => s.showToast);
-  const mapType = useMapStore((s) => s.mapType);
-  const setMapType = useMapStore((s) => s.setMapType);
-
-  // Geoman is mounted on the Leaflet map only — 3D Mapbox doesn't host it,
-  // so warn the user and offer a one-click switch back to a 2D base map.
-  if (mapType === 'mapbox3d' && !polygon) {
-    return (
-      <div className="flex flex-col gap-2 rounded-md border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
-        <div className="flex items-center gap-1.5 text-[12px] font-medium text-amber-200">
-          <AlertTriangle size={13} />
-          ציור זמין במפה דו־מימדית בלבד
-        </div>
-        <p className="text-[11px] leading-relaxed text-text-dim">
-          תצוגת תלת־מימד אינה תומכת בעריכה אינטראקטיבית של פוליגונים. החלף לתצוגה
-          דו־מימדית כדי לצייר.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setMapType('dark');
-            showToast('עברנו לתצוגה דו־מימדית — אפשר להתחיל לצייר');
-          }}
-          className="inline-flex items-center justify-center gap-1.5 rounded-[6px] border border-brand-teal/30 bg-brand-teal/10 px-2 py-1.5 text-[11.5px] font-medium text-brand-teal transition-colors hover:border-brand-teal hover:bg-brand-teal/20"
-        >
-          החלף לתצוגה דו־מימדית
-        </button>
-      </div>
-    );
-  }
 
   if (drawingPhase === 'editing' && polygon) {
     return (

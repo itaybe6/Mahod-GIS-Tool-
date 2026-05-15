@@ -13,8 +13,9 @@ const OPTIONS: { value: PolygonInputMode; label: string; icon: typeof Upload }[]
  * sub-UI the panel exposes (dropzone vs. draw-helper) and toggles geoman on
  * the active Leaflet map via `useUploadStore`.
  *
- * Disabled while a polygon is in-flight (parsing / drawing) so the user can't
- * yank the pipeline out from under whatever is mid-flight.
+ * Disabled while a polygon is in-flight (parsing) so the user can't yank the
+ * pipeline mid-parse. "ציור על המפה" is also disabled in 3D (`mapbox3d`) because
+ * Geoman runs only on the Leaflet map.
  */
 export function InputModeToggle(): JSX.Element {
   const inputMode = useUploadStore((s) => s.inputMode);

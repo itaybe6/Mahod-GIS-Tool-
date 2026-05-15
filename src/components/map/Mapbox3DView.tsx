@@ -12,6 +12,8 @@ import {
 import { gtfsStopRowsToTransitStops, transitStopsToGeoJSON } from '@/features/gtfs/gtfsStopMapUtils';
 import { useGtfsStops } from '@/features/gtfs/useGtfsStops';
 import {
+  useMetroStations,
+  type MetroStation,
   useRailwayStations,
   type RailwayStation,
   type RailwayStationStatus,
@@ -55,10 +57,11 @@ function buildInfraGeoJSON(): FeatureCollection<Point, { name: string }> {
 }
 
 interface RailwayStationFeatureProps {
-  station_id: number;
+  station_id: string | number;
   name: string;
   status: RailwayStationStatus;
   status_label: string;
+  station_kind: 'railway' | 'metro';
 }
 
 const RAILWAY_STATION_LABEL: Record<RailwayStationStatus, string> = {
@@ -85,6 +88,26 @@ function buildRailwayStationsGeoJSON(
         name: s.name,
         status: s.status,
         status_label: RAILWAY_STATION_LABEL[s.status],
+        station_kind: 'railway',
+      },
+    })),
+  };
+}
+
+function buildMetroStationsGeoJSON(
+  stations: ReadonlyArray<MetroStation>,
+): FeatureCollection<Point, RailwayStationFeatureProps> {
+  return {
+    type: 'FeatureCollection',
+    features: stations.map((s) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: toMapboxLngLat(s.position) },
+      properties: {
+        station_id: s.stationId,
+        name: s.name,
+        status: s.status,
+        status_label: RAILWAY_STATION_LABEL[s.status],
+        station_kind: 'metro',
       },
     })),
   };
@@ -224,6 +247,7 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
   // מקבלת ~30K Markers ונתקעת).
   const { data: gtfsRows, isFetched: gtfsFetched } = useGtfsStops(uploadedBbox);
   const { data: railwayStations } = useRailwayStations();
+  const { data: metroStations } = useMetroStations();
 
   /* ----------------------------- init map ----------------------------- */
   useEffect(() => {
@@ -466,9 +490,10 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
         const name = escapeHtml(stringifyProperty(props.name));
         const statusLabel = escapeHtml(stringifyProperty(props.status_label));
         const sid = escapeHtml(stringifyProperty(props.station_id));
+        const stationKind = stringifyProperty(props.station_kind) === 'metro' ? 'תחנת מטרו/רק"ל' : 'תחנת רכבת';
         return (
           `<strong>${name}</strong>` +
-          `<br/>סוג: תחנת רכבת` +
+          `<br/>סוג: ${stationKind}` +
           `<br/>סטטוס: ${statusLabel}` +
           `<br/>מזהה: ${sid}`
         );
@@ -524,14 +549,19 @@ export function Mapbox3DView({ className }: Mapbox3DViewProps): JSX.Element {
     src.setData(transitStopsToGeoJSON(stops));
   }, [glMapReady, gtfsFetched, gtfsRows, uploadedBbox]);
 
-  /* ----------------- Supabase infra_railway_stations → source ---------- */
+  /* --------- Supabase infra_*_stations (railway + metro/LRT) → source --- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !glMapReady || !loadedRef.current) return;
     const src = getGeoJsonSource(map, SOURCES.railwayStations);
     if (!src) return;
-    src.setData(buildRailwayStationsGeoJSON(railwayStations ?? []));
-  }, [glMapReady, railwayStations]);
+    const railGeo = buildRailwayStationsGeoJSON(railwayStations ?? []);
+    const metroGeo = buildMetroStationsGeoJSON(metroStations ?? []);
+    src.setData({
+      type: 'FeatureCollection',
+      features: [...railGeo.features, ...metroGeo.features],
+    });
+  }, [glMapReady, railwayStations, metroStations]);
 
   /* ------------------------ uploaded polygon sync ---------------------- */
   // Push the latest GeoJSON into the existing source whenever the user

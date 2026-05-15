@@ -42,7 +42,7 @@ const TABS: Record<LayerKey, TabMeta> = {
 const TAB_ORDER: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
 
 /**
- * Pill-shaped tab strip that "spotlights" a specific domain on the map.
+ * Pill-shaped tab strip that picks **one** domain at a time on the map.
  *
  * Each tab now carries a dot in the *exact same color* its markers use on the
  * map (so the strip doubles as a quick-glance legend), plus a Hebrew `title`

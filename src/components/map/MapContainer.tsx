@@ -30,6 +30,8 @@ import { AnalysisResultsLayer } from './AnalysisResultsLayer';
 import { gtfsStopRowsToTransitStops } from '@/features/gtfs/gtfsStopMapUtils';
 import { useGtfsStops } from '@/features/gtfs/useGtfsStops';
 import {
+  useMetroStations,
+  type MetroStation,
   useRailwayStations,
   type RailwayStation,
   type RailwayStationStatus,
@@ -187,6 +189,7 @@ export function MapView({ className }: MapViewProps): JSX.Element {
 
   // 109 תחנות בסך הכל — בטוח לטעון את כולן בכל זמן ולצייר אותן ישירות ב-Leaflet.
   const { data: railwayStations } = useRailwayStations();
+  const { data: metroStations } = useMetroStations();
   const is3D = mapType === 'mapbox3d';
   const tileConfig = is3D ? null : TILE_LAYERS[mapType];
 
@@ -337,6 +340,23 @@ export function MapView({ className }: MapViewProps): JSX.Element {
                     <strong>{station.name}</strong>
                     <br />
                     סוג: תחנת רכבת
+                    <br />
+                    סטטוס: {RAILWAY_STATION_STYLE[station.status].label}
+                    <br />
+                    מזהה: {station.stationId}
+                  </Popup>
+                </Marker>
+              ))}
+              {(metroStations ?? []).map((station: MetroStation) => (
+                <Marker
+                  key={`metro-st-${station.stationId}`}
+                  position={station.position}
+                  icon={RAILWAY_STATION_ICONS[station.status]}
+                >
+                  <Popup>
+                    <strong>{station.name}</strong>
+                    <br />
+                    סוג: תחנת מטרו/רק"ל
                     <br />
                     סטטוס: {RAILWAY_STATION_STYLE[station.status].label}
                     <br />

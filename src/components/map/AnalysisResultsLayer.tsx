@@ -40,6 +40,7 @@ function isNonEmptyFeatureCollection(fc: unknown): fc is FeatureCollection {
 export function AnalysisResultsLayer(): JSX.Element | null {
   const map = useMap();
   const results = useAnalysisStore((s) => s.results);
+  const activeLayers = useMapStore((s) => s.activeLayers);
   const svgRenderersRef = useRef<Partial<Record<AnalysisLayerKey, L.SVG>>>({});
 
   // Tracks Leaflet layer instances for each GeoJSON feature (for programmatic focus).
@@ -86,10 +87,11 @@ export function AnalysisResultsLayer(): JSX.Element | null {
   const visibleLayers = useMemo(() => {
     if (!results) return [] as AnalysisLayerKey[];
     return (Object.keys(PALETTE) as AnalysisLayerKey[]).filter((key) => {
+      if (!activeLayers[key]) return false;
       const lr = results[key];
       return lr != null && isNonEmptyFeatureCollection(lr.features);
     });
-  }, [results]);
+  }, [results, activeLayers]);
 
   if (visibleLayers.length === 0 || !results) return null;
 

@@ -10,6 +10,7 @@ import { RoutePlannerPanel } from '@/features/route-planner/components/RoutePlan
 import { InfrastructurePage } from '@/features/infrastructure/InfrastructurePage';
 import { SourcesPage } from '@/features/sources/SourcesPage';
 import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
+import { LoginPage } from '@/features/auth/LoginPage';
 
 /**
  * Centralized route table.
@@ -20,6 +21,7 @@ import { UpdateHistoryPage } from '@/features/history/UpdateHistoryPage';
 export function AppRouter(): JSX.Element {
   return (
     <Routes>
+      <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route
         path={ROUTES.DASHBOARD}
         element={

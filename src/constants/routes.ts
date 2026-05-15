@@ -4,6 +4,7 @@
  */
 
 export const ROUTES = {
+  LOGIN: '/login',
   DASHBOARD: '/',
   MAP: '/map',
   STATISTICS: '/statistics',

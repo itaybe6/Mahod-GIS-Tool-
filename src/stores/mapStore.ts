@@ -3,6 +3,16 @@ import type { MapType } from '@/constants/mapConfig';
 import type { LayerKey } from '@/types/common';
 import { useUploadStore } from '@/stores/uploadStore';
 
+const ALL_LAYER_KEYS: LayerKey[] = ['transit', 'accidents', 'roads', 'infrastructure', 'traffic'];
+
+/** Exactly one domain visible — driven by the dashboard top tab strip. */
+function exclusiveActiveLayers(domain: LayerKey): Record<LayerKey, boolean> {
+  return Object.fromEntries(ALL_LAYER_KEYS.map((k) => [k, k === domain])) as Record<
+    LayerKey,
+    boolean
+  >;
+}
+
 export interface FocusAnalysisFeature {
   layerKey: LayerKey;
   featureIndex: number;
@@ -55,13 +65,7 @@ interface MapState {
 
 export const useMapStore = create<MapState>((set) => ({
   mapType: 'dark',
-  activeLayers: {
-    transit: true,
-    accidents: true,
-    roads: false,
-    infrastructure: true,
-    traffic: true,
-  },
+  activeLayers: exclusiveActiveLayers('transit'),
   activeDomain: 'transit',
   focusRequest: null,
   lastGeocodeCamera: null,
@@ -85,7 +89,8 @@ export const useMapStore = create<MapState>((set) => ({
     set((state) => ({
       activeLayers: { ...state.activeLayers, [layer]: enabled },
     })),
-  setActiveDomain: (domain) => set({ activeDomain: domain }),
+  setActiveDomain: (domain) =>
+    set({ activeDomain: domain, activeLayers: exclusiveActiveLayers(domain) }),
   requestMapFocus: (lat, lng, zoom, bbox) =>
     set(() => {
       const resolvedZoom = zoom ?? 15;
