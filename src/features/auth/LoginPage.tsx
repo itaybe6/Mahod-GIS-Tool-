@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import type { AuthError } from '@supabase/supabase-js';
 import { ROUTES } from '@/constants/routes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAuthStore } from '@/stores/authStore';
@@ -10,13 +11,13 @@ import './login-page.css';
 
 type AuthMode = 'login' | 'signup';
 
-function isEmailNotConfirmedError(error: { message: string; code?: string }): boolean {
+function isEmailNotConfirmedError(error: AuthError): boolean {
   const code = error.code?.toLowerCase() ?? '';
   const msg = error.message.toLowerCase();
   return code === 'email_not_confirmed' || msg.includes('email not confirmed');
 }
 
-function mapAuthErrorToHebrew(error: { message: string; code?: string }): string {
+function mapAuthErrorToHebrew(error: AuthError): string {
   if (isEmailNotConfirmedError(error)) {
     return 'המייל עדיין לא אומת. פתח את קישור האימות שנשלח אליך, או שלח שוב מייל אימות.';
   }
@@ -25,6 +26,16 @@ function mapAuthErrorToHebrew(error: { message: string; code?: string }): string
     return 'אימייל או סיסמה שגויים.';
   }
   return error.message || 'שגיאת התחברות';
+}
+
+function pickPostAuthRedirect(from: unknown): string {
+  if (typeof from !== 'string' || !from.startsWith('/') || from.startsWith('//')) {
+    return ROUTES.DASHBOARD;
+  }
+  if (from === ROUTES.LOGIN) {
+    return ROUTES.DASHBOARD;
+  }
+  return from;
 }
 
 const COPY: Record<
@@ -46,6 +57,7 @@ const COPY: Record<
 
 export function LoginPage(): JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
   const showToast = useUIStore((s) => s.showToast);
   const [mode, setMode] = useState<AuthMode>('login');
@@ -111,6 +123,8 @@ export function LoginPage(): JSX.Element {
       return;
     }
 
+    const afterAuth = pickPostAuthRedirect((location.state as { from?: unknown } | null)?.from);
+
     setPending(true);
     try {
       if (mode === 'signup') {
@@ -133,7 +147,7 @@ export function LoginPage(): JSX.Element {
         if (data.session) {
           setAuthenticated(true);
           showToast('נרשמת בהצלחה');
-          navigate(ROUTES.DASHBOARD);
+          navigate(afterAuth);
           return;
         }
 
@@ -157,7 +171,7 @@ export function LoginPage(): JSX.Element {
 
         setAuthenticated(true);
         showToast('נרשמת והתחברת בהצלחה');
-        navigate(ROUTES.DASHBOARD);
+        navigate(afterAuth);
         return;
       }
 
@@ -177,7 +191,7 @@ export function LoginPage(): JSX.Element {
 
       setAuthenticated(true);
       showToast('התחברת בהצלחה');
-      navigate(ROUTES.DASHBOARD);
+      navigate(afterAuth);
     } finally {
       setPending(false);
     }

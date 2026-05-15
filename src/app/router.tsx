@@ -24,6 +24,14 @@ export function AppRouter(): JSX.Element {
     <Routes>
       <Route path={ROUTES.LOGIN} element={<LoginPage />} />
       <Route
+        path={ROUTES.RECENT_FILES}
+        element={
+          <AppShell>
+            <RecentFilesPage />
+          </AppShell>
+        }
+      />
+      <Route
         path={ROUTES.DASHBOARD}
         element={
           <AppShell>
@@ -85,14 +93,6 @@ export function AppRouter(): JSX.Element {
         element={
           <AppShell>
             <UpdateHistoryPage />
-          </AppShell>
-        }
-      />
-      <Route
-        path={ROUTES.RECENT_FILES}
-        element={
-          <AppShell>
-            <RecentFilesPage />
           </AppShell>
         }
       />

@@ -34,10 +34,10 @@ export function LayerRow({ dotTone, name, count, layer, detail }: LayerRowProps)
     <div className="flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-white/[0.03] [&+&]:rounded-none [&+&]:border-t [&+&]:border-border">
       <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', DOT_TONES[dotTone])} />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium text-text">{name}</div>
-        <div className="font-mono text-[12px] leading-snug text-text-faint">{count}</div>
+        <div className="text-[13px] font-medium text-white">{name}</div>
+        <div className="font-mono text-[12px] leading-snug text-white">{count}</div>
         {detail ? (
-          <div className="mt-0.5 text-[11.5px] leading-snug text-text-faint/90">{detail}</div>
+          <div className="mt-0.5 text-[11.5px] leading-snug text-white">{detail}</div>
         ) : null}
       </div>
       <ToggleSwitch
@@ -67,13 +67,13 @@ export function LayersCard(): JSX.Element {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>שכבות מידע</CardTitle>
+        <CardTitle className="text-white">שכבות מידע</CardTitle>
         <button
           type="button"
           title="הוסף שכבה"
           aria-label="הוסף שכבה"
           onClick={() => showToast('הוספת שכבה — בקרוב')}
-          className="grid place-items-center text-text-faint transition-colors hover:text-brand-teal"
+          className="grid place-items-center text-white/60 transition-colors hover:text-brand-teal"
         >
           <Plus size={14} />
         </button>

@@ -18,10 +18,13 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / k ** i).toFixed(i === 0 ? 0 : 1))} ${sizes[i]}`;
 }
 
+type AuthGate = 'checking' | 'allowed' | 'denied';
+
 export function RecentFilesPage(): JSX.Element {
   const navigate = useNavigate();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
   const showToast = useUIStore((s) => s.showToast);
+  const [authGate, setAuthGate] = useState<AuthGate>('checking');
   const [rows, setRows] = useState<UserSavedFilesRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,12 +54,40 @@ export function RecentFilesPage(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.RECENT_FILES } });
-      return;
-    }
-    void load();
-  }, [isAuthenticated, navigate, load]);
+    let cancelled = false;
+
+    void (async () => {
+      if (!isSupabaseConfigured) {
+        if (!cancelled) {
+          setAuthGate('denied');
+        }
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (!session) {
+        setAuthenticated(false);
+        setAuthGate('denied');
+        navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.RECENT_FILES } });
+        return;
+      }
+
+      setAuthenticated(true);
+      setAuthGate('allowed');
+      await load();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, load, setAuthenticated]);
 
   const handleDownload = async (row: UserSavedFilesRow): Promise<void> => {
     setDownloadingId(row.id);
@@ -81,14 +112,6 @@ export function RecentFilesPage(): JSX.Element {
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-1 items-center justify-center bg-bg-1 p-6" dir="rtl">
-        <Loader2 className="animate-spin text-brand-teal" size={28} />
-      </div>
-    );
-  }
-
   if (!isSupabaseConfigured) {
     return (
       <div className="flex min-w-0 flex-1 items-center justify-center bg-bg-1 p-6" dir="rtl">
@@ -99,6 +122,14 @@ export function RecentFilesPage(): JSX.Element {
             כדי לטעון את רשימת הקבצים צריך להגדיר `VITE_SUPABASE_URL` ו־`VITE_SUPABASE_ANON_KEY`.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (authGate === 'checking' || authGate === 'denied') {
+    return (
+      <div className="flex flex-1 items-center justify-center bg-bg-1 p-6" dir="rtl">
+        <Loader2 className="animate-spin text-brand-teal" size={28} aria-label="טוען" />
       </div>
     );
   }
