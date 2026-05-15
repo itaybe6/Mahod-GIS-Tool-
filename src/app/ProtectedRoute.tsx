@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 /**
- * Redirects unauthenticated users to the login page,
+ * Redirects users who are neither logged in nor in guest mode to the login page,
  * preserving the attempted path so LoginPage can redirect back after auth.
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps): JSX.Element {

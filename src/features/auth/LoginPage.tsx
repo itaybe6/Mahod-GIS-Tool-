@@ -211,6 +211,9 @@ export function LoginPage(): JSX.Element {
         <video className="auth-bg-video" autoPlay muted loop playsInline preload="auto">
           <source src={loginVideoUrl} type="video/mp4" />
         </video>
+        <div className="auth-video-brand" aria-hidden="true">
+          <img src={logoUrl} alt="" className="auth-hero-logo auth-hero-logo--video" />
+        </div>
       </section>
 
       <section className="auth-form-side">
@@ -219,9 +222,11 @@ export function LoginPage(): JSX.Element {
             <img src={logoUrl} alt="מהוד הנדסה" className="auth-hero-logo" />
           </div>
 
-          <header>
-            <h1 className="auth-title">{uiCopy.title}</h1>
-          </header>
+          {mode === 'signup' ? (
+            <header>
+              <h1 className="auth-title">{uiCopy.title}</h1>
+            </header>
+          ) : null}
 
           <div className="auth-tabs" role="tablist" aria-label="מצב התחברות">
             <button
@@ -284,16 +289,6 @@ export function LoginPage(): JSX.Element {
               </label>
             ) : null}
 
-            <div className="auth-form-row">
-              <label className="auth-checkbox">
-                <input type="checkbox" name="remember" defaultChecked />
-                <span>זכור אותי</span>
-              </label>
-              <button type="button" className="auth-link-button">
-                שכחתי סיסמה
-              </button>
-            </div>
-
             <button className="auth-primary-btn" type="submit" disabled={pending}>
               {pending ? 'מתחבר...' : uiCopy.submitLabel}
             </button>
@@ -322,12 +317,6 @@ export function LoginPage(): JSX.Element {
               </button>
             </div>
           ) : null}
-
-          <div className="auth-divider">או</div>
-
-          <p className="auth-legal">
-            בהמשך אתה מסכים ל-<a href="#">תנאי השימוש</a> ול-<a href="#">מדיניות הפרטיות</a>.
-          </p>
         </div>
 
         <footer className="auth-footer">
